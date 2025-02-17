@@ -630,7 +630,9 @@ describe('public-stats', () => {
     })
 
     describe('per_client_stats', () => {
-      it('measurments are aggregated to per client stats', async () => {
+      it('measurements are aggregated to per client stats', async () => {
+        // We create multiple measurments with different miner ids and thus key ids
+        // We also want to test multiple different number of measurments for a given combination of (cid,minerId)
         const keyIdToMeasurmentMap = new Map()
         for (let i = 0; i <= 20; i++) {
           const measurement = { ...VALID_MEASUREMENT, minerId: `f${i}test`, protocol: 'http' }
