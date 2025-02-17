@@ -7,6 +7,7 @@ import { buildEvaluatedCommitteesFromMeasurements, VALID_MEASUREMENT } from './h
 import { updatePublicStats } from '../lib/public-stats.js'
 import { beforeEach } from 'mocha'
 import { groupMeasurementsToCommittees } from '../lib/committee.js'
+import { describe } from 'node:test'
 
 /** @typedef {import('../lib/preprocess.js').Measurement} Measurement */
 
@@ -29,7 +30,7 @@ describe('public-stats', () => {
     await pgClient.query('DELETE FROM indexer_query_stats')
     await pgClient.query('DELETE FROM daily_deals')
     await pgClient.query('DELETE FROM retrieval_timings')
-
+    await pgClient.query('DELETE FROM daily_client_retrieval_stats')
     // Run all tests inside a transaction to ensure `now()` always returns the same value
     // See https://dba.stackexchange.com/a/63549/125312
     // This avoids subtle race conditions when the tests are executed around midnight.
@@ -626,6 +627,25 @@ describe('public-stats', () => {
         { day: today, miner_id: 'f1first', ttfb_p50: [2000, 3000] },
         { day: today, miner_id: 'f1second', ttfb_p50: [1500] }
       ])
+    })
+
+    describe('per_client_stats', () => {
+      it('creates or updates rows for today', async () => {
+        /** @type {Measurement[]} */
+        const allMeasurements = [{ ...VALID_MEASUREMENT, ...VALID_MEASUREMENT, ...VALID_MEASUREMENT }]
+        const findDealClients = (_minerId, _cid) => ['f0client', 'f1client']
+        const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+        const { rows: created } = await pgClient.query(
+          'SELECT * FROM daily_client_retrieval_stats'
+        )
+        assert.deepStrictEqual(created, [])
+        await updatePublicStats({
+          createPgClient,
+          committees,
+          allMeasurements,
+          findDealClients
+        })
+      })
     })
   })
 
