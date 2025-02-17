@@ -676,7 +676,7 @@ describe('public-stats', () => {
           "SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats WHERE client_id = 'f1client'"
         )
         // All measurments are successful and successful_http
-        assert.deepStrictEqual(f1Stats, { day: today, client_id: 'f1client', total: expectedF1TotalMeasurments, successful: expectedF1TotalMeasurments, successful_http: expectedF1TotalMeasurments })
+        assert.deepStrictEqual(f1Stats, [{ day: today, client_id: 'f1client', total: expectedF1TotalMeasurments, successful: expectedF1TotalMeasurments, successful_http: expectedF1TotalMeasurments }])
       })
     })
   })
