@@ -646,7 +646,7 @@ describe('public-stats', () => {
           }
         }
         /** @type {Measurement[]} */
-        const allMeasurements = keyIdToMeasurmentMap.values().flatMap(measurements => measurements).toArray()
+        const allMeasurements = [...keyIdToMeasurmentMap.values()].flat()
         // Separate the measurments into two groups, one for the client f0 and the other for f1
         const findDealClients = (minerId, _cid) => {
           const num = parseInt(minerId.match(/\d+/)?.[0] || 0, 10)
