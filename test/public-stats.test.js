@@ -630,10 +630,30 @@ describe('public-stats', () => {
     })
 
     describe('per_client_stats', () => {
-      it('creates or updates rows for today', async () => {
+      it('measurments are aggregated to per client stats', async () => {
+        const keyIdToMeasurmentMap = new Map()
+        for (let i = 0; i <= 20; i++) {
+          const measurement = { ...VALID_MEASUREMENT, minerId: `f${i}test`, protocol: 'http' }
+          const keyId = `${measurement.cid}::${measurement.minerId}`
+          for (let j = 0; j <= i; j++) {
+            if (keyIdToMeasurmentMap.has(keyId)) {
+              keyIdToMeasurmentMap.get(keyId).push(measurement)
+            } else {
+              keyIdToMeasurmentMap.set(keyId, [measurement])
+            }
+          }
+        }
         /** @type {Measurement[]} */
-        const allMeasurements = [{ ...VALID_MEASUREMENT, ...VALID_MEASUREMENT, ...VALID_MEASUREMENT }]
-        const findDealClients = (_minerId, _cid) => ['f0client', 'f1client']
+        const allMeasurements = keyIdToMeasurmentMap.values().toArray().flatMap(m => m)
+        // Separate the measurments into two groups, one for the client f0 and the other for f1
+        const findDealClients = (minerId, _cid) => {
+          const num = parseInt(minerId.match(/\d+/)?.[0] || 0, 10)
+          if (num % 2 === 0) {
+            return ['f0client']
+          } else {
+            return ['f1client']
+          }
+        }
         const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
         const { rows: created } = await pgClient.query(
           'SELECT * FROM daily_client_retrieval_stats'
@@ -645,6 +665,18 @@ describe('public-stats', () => {
           allMeasurements,
           findDealClients
         })
+        const { rows: f0Stats } = await pgClient.query(
+          "SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats WHERE client_id = 'f0client'"
+        )
+        const totalMeasurements = allMeasurements.length
+        assert(totalMeasurements > 0)
+        // F0 and F1 do not share any measurements and the expected number of measurments can be computed given the total number of measurements
+        const expectedF1TotalMeasurments = totalMeasurements - f0Stats[0].total
+        const { rows: f1Stats } = await pgClient.query(
+          "SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats WHERE client_id = 'f1client'"
+        )
+        // All measurments are successful and successful_http
+        assert.deepStrictEqual(f1Stats, { day: today, client_id: 'f1client', total: expectedF1TotalMeasurments, successful: expectedF1TotalMeasurments, successful_http: expectedF1TotalMeasurments })
       })
     })
   })
