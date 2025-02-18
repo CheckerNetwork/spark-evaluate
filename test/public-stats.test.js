@@ -31,6 +31,7 @@ describe('public-stats', () => {
     await pgClient.query('DELETE FROM daily_deals')
     await pgClient.query('DELETE FROM retrieval_timings')
     await pgClient.query('DELETE FROM daily_client_retrieval_stats')
+
     // Run all tests inside a transaction to ensure `now()` always returns the same value
     // See https://dba.stackexchange.com/a/63549/125312
     // This avoids subtle race conditions when the tests are executed around midnight.
@@ -629,31 +630,31 @@ describe('public-stats', () => {
       ])
     })
 
-    describe('per_client_stats', () => {
-      it('measurements are aggregated to per client stats', async () => {
+    describe('updateDailyClientRetrievalStats', () => {
+      it('aggregates per client stats', async () => {
         // We create multiple measurments with different miner ids and thus key ids
         // We also want to test multiple different number of measurments for a given combination of (cid,minerId)
-        const keyIdToMeasurmentMap = new Map()
-        for (let i = 0; i <= 20; i++) {
-          const measurement = { ...VALID_MEASUREMENT, minerId: `f${i}test`, protocol: 'http' }
-          const keyId = `${measurement.cid}::${measurement.minerId}`
-          for (let j = 0; j <= i; j++) {
-            if (keyIdToMeasurmentMap.has(keyId)) {
-              keyIdToMeasurmentMap.get(keyId).push(measurement)
-            } else {
-              keyIdToMeasurmentMap.set(keyId, [measurement])
-            }
-          }
-        }
         /** @type {Measurement[]} */
-        const allMeasurements = [...keyIdToMeasurmentMap.values()].flat()
+        const allMeasurements = [
+          // a majority is found, retrievalResult = OK
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' }
+
+        ]
+
         // Separate the measurments into two groups, one for the client f0 and the other for f1
         const findDealClients = (minerId, _cid) => {
-          const num = parseInt(minerId.match(/\d+/)?.[0] || 0, 10)
-          if (num % 2 === 0) {
-            return ['f0client']
-          } else {
-            return ['f1client']
+          switch (minerId) {
+            case 'f0test':
+              return ['f0client']
+            case 'f1test':
+              return ['f1client']
+            default:
+              throw new Error('Unexpected minerId')
           }
         }
         const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
@@ -670,15 +671,18 @@ describe('public-stats', () => {
         const { rows: f0Stats } = await pgClient.query(
           "SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats WHERE client_id = 'f0client'"
         )
-        const totalMeasurements = allMeasurements.length
-        assert(totalMeasurements > 0)
-        // F0 and F1 do not share any measurements and the expected number of measurments can be computed given the total number of measurements
-        const expectedF1TotalMeasurments = totalMeasurements - f0Stats[0].total
+        assert.strictEqual(f0Stats.length, 1)
+        assert.deepStrictEqual(f0Stats, [
+          { day: today, client_id: 'f0client', total: 2, successful: 2, successful_http: 2 }
+        ])
         const { rows: f1Stats } = await pgClient.query(
           "SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats WHERE client_id = 'f1client'"
         )
         // All measurments are successful and successful_http
-        assert.deepStrictEqual(f1Stats, [{ day: today, client_id: 'f1client', total: expectedF1TotalMeasurments, successful: expectedF1TotalMeasurments, successful_http: expectedF1TotalMeasurments }])
+        assert.strictEqual(f1Stats.length, 1)
+        assert.deepStrictEqual(f1Stats, [
+          { day: today, client_id: 'f1client', total: 3, successful: 3, successful_http: 3 }
+        ])
       })
     })
   })
