@@ -4,7 +4,7 @@ import pg from 'pg'
 import { DATABASE_URL } from '../lib/config.js'
 import { migrateWithPgClient } from '../lib/migrate.js'
 import { buildEvaluatedCommitteesFromMeasurements, VALID_MEASUREMENT } from './helpers/test-data.js'
-import { updatePublicStats } from '../lib/public-stats.js'
+import { updateDailyClientRetrievalStats, updatePublicStats } from '../lib/public-stats.js'
 import { beforeEach } from 'mocha'
 import { groupMeasurementsToCommittees } from '../lib/committee.js'
 import { describe } from 'node:test'
@@ -662,12 +662,11 @@ describe('public-stats', () => {
           'SELECT * FROM daily_client_retrieval_stats'
         )
         assert.deepStrictEqual(created, [])
-        await updatePublicStats({
-          createPgClient,
+        await updateDailyClientRetrievalStats(
+          pgClient,
           committees,
-          allMeasurements,
           findDealClients
-        })
+        )
         const { rows: f0Stats } = await pgClient.query(
           "SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats WHERE client_id = 'f0client'"
         )
@@ -682,6 +681,108 @@ describe('public-stats', () => {
         assert.strictEqual(f1Stats.length, 1)
         assert.deepStrictEqual(f1Stats, [
           { day: today, client_id: 'f1client', total: 3, successful: 3, successful_http: 3 }
+        ])
+      })
+      it('skips clients that have not match for a given miner_id,piece_cid combination', async () => {
+        // We create multiple measurments with different miner ids and thus key ids
+        // We also want to test multiple different number of measurments for a given combination of (cid,minerId)
+        /** @type {Measurement[]} */
+        const allMeasurements = [
+          // a majority is found, retrievalResult = OK
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' }
+        ]
+
+        // Separate the measurments into two groups, one for the client f0 and the other for f1
+        const findDealClients = (_minerId, _cid) => undefined
+
+        const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+        const originalWarn = console.warn
+        let warnCalled = false
+        console.warn = function (message) {
+          warnCalled = true
+          assert(message.includes('no deal clients found. Excluding the task from daily per-client stats.'))
+        }
+        await updateDailyClientRetrievalStats(
+          pgClient,
+          committees,
+          findDealClients
+        )
+        assert(warnCalled)
+        console.warn = originalWarn
+        const { rows: stats } = await pgClient.query(
+          'SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats'
+        )
+        assert.strictEqual(stats.length, 0, `No stats should be recorded: ${JSON.stringify(stats)}`)
+      })
+      it('updates existing clients rsr scores on conflicting client_id,day pairs', async () => {
+        // We create multiple measurments with different miner ids and thus key ids
+        // We also want to test multiple different number of measurments for a given combination of (cid,minerId)
+        /** @type {Measurement[]} */
+        const allMeasurements = [
+          // a majority is found, retrievalResult = OK
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' }
+        ]
+
+        // Separate the measurments into two groups, one for the client f0 and the other for f1
+        const findDealClients = (_minerId, _cid) => ['f0client']
+
+        let committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+        await updateDailyClientRetrievalStats(
+          pgClient,
+          committees,
+          findDealClients
+        )
+        let { rows: stats } = await pgClient.query(
+          'SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats'
+        )
+        assert.strictEqual(stats.length, 1)
+        assert.deepStrictEqual(stats, [
+          { day: today, client_id: 'f0client', total: 1, successful: 1, successful_http: 1 }
+        ])
+        allMeasurements.push(
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' }
+        )
+        committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+        await updateDailyClientRetrievalStats(
+          pgClient,
+          committees,
+          findDealClients
+        )
+        stats = (await pgClient.query(
+          'SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats'
+        )).rows
+        assert.strictEqual(stats.length, 1)
+        assert.deepStrictEqual(stats, [
+          { day: today, client_id: 'f0client', total: 4, successful: 4, successful_http: 4 }
+        ])
+      })
+      it('coprrectly counts protocol and retrieval status to client rsr', async () => {
+        // We create multiple measurments with different miner ids and thus key ids
+        // We also want to test multiple different number of measurments for a given combination of (cid,minerId)
+        /** @type {Measurement[]} */
+        const allMeasurements = [
+          // a majority is found, retrievalResult = OK
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+          { ...VALID_MEASUREMENT, minerId: 'f0test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test', retrievalResult: 'HTTP_404' }
+        ]
+
+        // Separate the measurments into two groups, one for the client f0 and the other for f1
+        const findDealClients = (_minerId, _cid) => ['f0client']
+
+        const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+        await updateDailyClientRetrievalStats(
+          pgClient,
+          committees,
+          findDealClients
+        )
+        const { rows: stats } = await pgClient.query(
+          'SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats'
+        )
+        assert.deepStrictEqual(stats, [
+          { day: today, client_id: 'f0client', total: 3, successful: 2, successful_http: 1 }
         ])
       })
     })
