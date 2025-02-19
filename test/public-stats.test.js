@@ -682,8 +682,6 @@ describe('public-stats', () => {
         ])
       })
       it('aggregates overlapping per client stats', async () => {
-        // We create multiple measurments with different miner ids and thus key ids
-        // We also want to test multiple different number of measurments for a given combination of (cid,minerId)
         /** @type {Measurement[]} */
         const allMeasurements = [
           // minerId f01test stores deals for both client f0 and f1
@@ -695,7 +693,7 @@ describe('public-stats', () => {
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' }
         ]
 
-        // Separate the measurments into two groups, one for the client f0 and the other for f1
+        // Separate the measurments into two groups, one for the client f0 and f1 and the other only for f1
         const findDealClients = (minerId, _cid) => {
           switch (minerId) {
             case 'f01test':
