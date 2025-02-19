@@ -642,7 +642,6 @@ describe('public-stats', () => {
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' },
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' },
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' }
-
         ]
 
         // Separate the measurments into two groups, one for the client f0 and the other for f1
@@ -680,6 +679,50 @@ describe('public-stats', () => {
         assert.strictEqual(f1Stats.length, 1)
         assert.deepStrictEqual(f1Stats, [
           { day: today, client_id: 'f1client', total: 3, successful: 3, successful_http: 3 }
+        ])
+      })
+      it('aggregates overlapping per client stats', async () => {
+        // We create multiple measurments with different miner ids and thus key ids
+        // We also want to test multiple different number of measurments for a given combination of (cid,minerId)
+        /** @type {Measurement[]} */
+        const allMeasurements = [
+          // minerId f01test stores deals for both client f0 and f1
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f01test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f01test' },
+
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' }
+        ]
+
+        // Separate the measurments into two groups, one for the client f0 and the other for f1
+        const findDealClients = (minerId, _cid) => {
+          switch (minerId) {
+            case 'f01test':
+              return ['f0client', 'f1client']
+            case 'f1test':
+              return ['f1client']
+            default:
+              throw new Error('Unexpected minerId')
+          }
+        }
+        const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+        await updateDailyClientRetrievalStats(
+          pgClient,
+          committees,
+          findDealClients
+        )
+        const { rows: f0Stats } = await pgClient.query(
+          "SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats WHERE client_id = 'f0client'"
+        )
+        assert.deepStrictEqual(f0Stats, [
+          { day: today, client_id: 'f0client', total: 2, successful: 2, successful_http: 2 }
+        ])
+        const { rows: f1Stats } = await pgClient.query(
+          "SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats WHERE client_id = 'f1client'"
+        )
+        assert.deepStrictEqual(f1Stats, [
+          { day: today, client_id: 'f1client', total: 5, successful: 5, successful_http: 5 }
         ])
       })
       it('skips clients that have not match for a given miner_id,piece_cid combination', async () => {
