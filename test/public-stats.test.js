@@ -795,7 +795,8 @@ describe('public-stats', () => {
           { day: today, client_id: 'f0client', total: 4, successful: 4, successful_http: 4 }
         ])
       })
-      it('coprrectly counts protocol and retrieval status to client rsr', async () => {
+      it('correctly handles different protocols and retrieval results', async () => {
+        // We create multiple measurements that have different combinations of protocols and retrieval results
         /** @type {Measurement[]} */
         const allMeasurements = [
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
@@ -813,6 +814,8 @@ describe('public-stats', () => {
         const { rows: stats } = await pgClient.query(
           'SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats'
         )
+        // Http protocols should be counted as successful and successful_http while other protocols should only be counted as successful
+        // Measurements with retrievalResult HTTP_404 should only be counted to the total number of results
         assert.deepStrictEqual(stats, [
           { day: today, client_id: 'f0client', total: 3, successful: 2, successful_http: 1 }
         ])
