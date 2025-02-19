@@ -636,7 +636,6 @@ describe('public-stats', () => {
         // We also want to test multiple different number of measurments for a given combination of (cid,minerId)
         /** @type {Measurement[]} */
         const allMeasurements = [
-          // a majority is found, retrievalResult = OK
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
 
@@ -684,19 +683,16 @@ describe('public-stats', () => {
         ])
       })
       it('skips clients that have not match for a given miner_id,piece_cid combination', async () => {
-        // We create multiple measurments with different miner ids and thus key ids
-        // We also want to test multiple different number of measurments for a given combination of (cid,minerId)
         /** @type {Measurement[]} */
         const allMeasurements = [
-          // a majority is found, retrievalResult = OK
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' }
         ]
 
-        // Separate the measurments into two groups, one for the client f0 and the other for f1
         const findDealClients = (_minerId, _cid) => undefined
 
         const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+        // We test the warning output by changing the default warn function
         const originalWarn = console.warn
         let warnCalled = false
         console.warn = function (message) {
@@ -708,7 +704,9 @@ describe('public-stats', () => {
           committees,
           findDealClients
         )
+        // Warning function should have been called
         assert(warnCalled)
+        // Reset warning function
         console.warn = originalWarn
         const { rows: stats } = await pgClient.query(
           'SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats'
@@ -716,15 +714,11 @@ describe('public-stats', () => {
         assert.strictEqual(stats.length, 0, `No stats should be recorded: ${JSON.stringify(stats)}`)
       })
       it('updates existing clients rsr scores on conflicting client_id,day pairs', async () => {
-        // We create multiple measurments with different miner ids and thus key ids
-        // We also want to test multiple different number of measurments for a given combination of (cid,minerId)
         /** @type {Measurement[]} */
         const allMeasurements = [
-          // a majority is found, retrievalResult = OK
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' }
         ]
 
-        // Separate the measurments into two groups, one for the client f0 and the other for f1
         const findDealClients = (_minerId, _cid) => ['f0client']
 
         let committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
@@ -740,6 +734,8 @@ describe('public-stats', () => {
         assert.deepStrictEqual(stats, [
           { day: today, client_id: 'f0client', total: 1, successful: 1, successful_http: 1 }
         ])
+
+        // We now create another round of measurments for the same client and day
         allMeasurements.push(
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' }
@@ -759,17 +755,12 @@ describe('public-stats', () => {
         ])
       })
       it('coprrectly counts protocol and retrieval status to client rsr', async () => {
-        // We create multiple measurments with different miner ids and thus key ids
-        // We also want to test multiple different number of measurments for a given combination of (cid,minerId)
         /** @type {Measurement[]} */
         const allMeasurements = [
-          // a majority is found, retrievalResult = OK
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
-          { ...VALID_MEASUREMENT, minerId: 'f0test' },
+          { ...VALID_MEASUREMENT, protocol: 'NOT_HTTP', minerId: 'f0test' },
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test', retrievalResult: 'HTTP_404' }
         ]
-
-        // Separate the measurments into two groups, one for the client f0 and the other for f1
         const findDealClients = (_minerId, _cid) => ['f0client']
 
         const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
