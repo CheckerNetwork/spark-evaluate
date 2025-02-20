@@ -310,4 +310,15 @@ describe('assertValidMeasurement', () => {
       /field `indexerResult` must be set/
     )
   })
+  it('rejects measurements with head_status_code but not status_code', () => {
+    const m = {
+      ...VALID_MEASUREMENT,
+      head_status_code: 200,
+      status_code: null
+    }
+    assert.throws(
+      () => assertValidMeasurement(m),
+      /`head_status_code` must have `status_code` as well/
+    )
+  })
 })
