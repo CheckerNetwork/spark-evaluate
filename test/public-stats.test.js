@@ -745,10 +745,11 @@ describe('public-stats', () => {
           committees,
           findDealClients
         )
-        // Warning function should have been called
-        assert(warnCalled)
         // Reset warning function
         console.warn = originalWarn
+
+        // Warning function should have been called
+        assert(warnCalled)
         const { rows: stats } = await pgClient.query(
           'SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats'
         )
