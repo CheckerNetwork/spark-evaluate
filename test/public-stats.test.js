@@ -575,7 +575,7 @@ describe('public-stats', () => {
         givenTimeToFirstByte({ ...VALID_MEASUREMENT, cid: 'cidone', minerId: 'f1first', retrievalResult: 'OK' }, 3000),
         givenTimeToFirstByte({ ...VALID_MEASUREMENT, cid: 'cidone', minerId: 'f1second', retrievalResult: 'OK' }, 2000),
         givenTimeToFirstByte({ ...VALID_MEASUREMENT, cid: 'cidone', minerId: 'f1second', retrievalResult: 'OK' }, 1000),
-        // measurments with invalid values
+        // measurements with invalid values
         givenTimeToFirstByte({ ...VALID_MEASUREMENT, cid: 'cidone', minerId: 'f1second', retrievalResult: 'OK' }, -1000),
         { ...VALID_MEASUREMENT, cid: 'cidone', minerId: 'f1second', retrievalResult: 'OK', first_byte_at: /** @type {any} */('invalid') }
       ]
@@ -631,7 +631,7 @@ describe('public-stats', () => {
 
     describe('updateDailyClientRetrievalStats', () => {
       it('aggregates per client stats', async () => {
-        // We create multiple measurments with different miner ids and thus key ids
+        // We create multiple measurements with different miner ids and thus key ids
         // We also want to test multiple different number of measurements for a given combination of (cid,minerId)
         /** @type {Measurement[]} */
         const allMeasurements = [
@@ -643,7 +643,7 @@ describe('public-stats', () => {
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' }
         ]
 
-        // Separate the measurments into two groups, one for the client f0 and the other for f1
+        // Separate the measurements into two groups, one for the client f0 and the other for f1
         const findDealClients = (minerId, _cid) => {
           switch (minerId) {
             case 'f0test':
@@ -691,7 +691,7 @@ describe('public-stats', () => {
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' }
         ]
 
-        // Separate the measurments into two groups, one for the client f0 and f1 and the other only for f1
+        // Separate the measurements into two groups, one for the client f0 and f1 and the other only for f1
         const findDealClients = (minerId, _cid) => {
           switch (minerId) {
             case 'f01test':
@@ -776,7 +776,7 @@ describe('public-stats', () => {
           { day: today, client_id: 'f0client', total: 1, successful: 1, successful_http: 1 }
         ])
 
-        // We now create another round of measurments for the same client and day
+        // We now create another round of measurements for the same client and day
         allMeasurements.push(
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' }
