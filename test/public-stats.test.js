@@ -665,19 +665,18 @@ describe('public-stats', () => {
           committees,
           findDealClients
         )
-        const { rows: f0Stats } = await pgClient.query(
-          "SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats WHERE client_id = 'f0client'"
-        )
-        assert.strictEqual(f0Stats.length, 1)
-        assert.deepStrictEqual(f0Stats, [
-          { day: today, client_id: 'f0client', total: 2, successful: 2, successful_http: 2 }
-        ])
-        const { rows: f1Stats } = await pgClient.query(
-          "SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats WHERE client_id = 'f1client'"
-        )
-        // All measurments are successful and successful_http
-        assert.strictEqual(f1Stats.length, 1)
-        assert.deepStrictEqual(f1Stats, [
+        const { rows } = await pgClient.query(
+          `SELECT 
+               day::TEXT, 
+               client_id, 
+               total, 
+               successful, 
+               successful_http 
+            FROM daily_client_retrieval_stats 
+            ORDER BY client_id`)
+
+        assert.deepStrictEqual(rows, [
+          { day: today, client_id: 'f0client', total: 2, successful: 2, successful_http: 2 },
           { day: today, client_id: 'f1client', total: 3, successful: 3, successful_http: 3 }
         ])
       })
@@ -710,16 +709,18 @@ describe('public-stats', () => {
           committees,
           findDealClients
         )
-        const { rows: f0Stats } = await pgClient.query(
-          "SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats WHERE client_id = 'f0client'"
-        )
-        assert.deepStrictEqual(f0Stats, [
-          { day: today, client_id: 'f0client', total: 2, successful: 2, successful_http: 2 }
-        ])
-        const { rows: f1Stats } = await pgClient.query(
-          "SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats WHERE client_id = 'f1client'"
-        )
-        assert.deepStrictEqual(f1Stats, [
+        const { rows } = await pgClient.query(
+          `SELECT 
+               day::TEXT, 
+               client_id, 
+               total, 
+               successful, 
+               successful_http 
+            FROM daily_client_retrieval_stats 
+            ORDER BY client_id`)
+
+        assert.deepStrictEqual(rows, [
+          { day: today, client_id: 'f0client', total: 2, successful: 2, successful_http: 2 },
           { day: today, client_id: 'f1client', total: 5, successful: 5, successful_http: 5 }
         ])
       })
