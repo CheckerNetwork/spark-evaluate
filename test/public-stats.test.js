@@ -632,7 +632,7 @@ describe('public-stats', () => {
     describe('updateDailyClientRetrievalStats', () => {
       it('aggregates per client stats', async () => {
         // We create multiple measurments with different miner ids and thus key ids
-        // We also want to test multiple different number of measurments for a given combination of (cid,minerId)
+        // We also want to test multiple different number of measurements for a given combination of (cid,minerId)
         /** @type {Measurement[]} */
         const allMeasurements = [
           { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
