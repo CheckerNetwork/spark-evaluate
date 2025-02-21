@@ -7,7 +7,6 @@ import { buildEvaluatedCommitteesFromMeasurements, VALID_MEASUREMENT } from './h
 import { updateDailyClientRetrievalStats, updatePublicStats } from '../lib/public-stats.js'
 import { beforeEach } from 'mocha'
 import { groupMeasurementsToCommittees } from '../lib/committee.js'
-import { describe } from 'node:test'
 
 /** @typedef {import('../lib/preprocess.js').Measurement} Measurement */
 
