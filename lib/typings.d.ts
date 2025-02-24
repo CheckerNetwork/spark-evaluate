@@ -87,6 +87,7 @@ export interface RawMeasurement {
   finished_at: string;
 
   status_code: number | undefined | null;
+  head_status_code: number | undefined | null;
   timeout: boolean;
   byte_length: number;
   car_too_large: boolean;
