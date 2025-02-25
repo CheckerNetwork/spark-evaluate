@@ -157,7 +157,7 @@ function formatMeasurement (m, { keepRejected } = {}) {
     fields.push((m.taskingEvaluation === 'OK' ? '🫡' : '🙅').padEnd(7))
   }
 
-  fields.push((m.consensusEvaluation === 'MAJORITY_RESULT' ? '🫡' : '🙅').padEnd(9))
+  fields.push((m.consensusEvaluation === 'MAJORITY_RESULT' ? '✅' : '❌').padEnd(9))
   fields.push((m.retrievalResult ?? ''))
 
   return fields.join(' ')
