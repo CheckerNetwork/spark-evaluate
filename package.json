@@ -1,7 +1,7 @@
 {
     "name": "@filecoin-station/spark-evaluate",
     "type": "module",
-    "version": "1.0.4",
+    "version": "1.1.0",
     "scripts": {
         "migrate": "node bin/migrate.js",
         "start": "node bin/spark-evaluate.js",
