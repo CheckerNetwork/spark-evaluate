@@ -690,7 +690,7 @@ describe('public-stats', () => {
 
         // Separate the measurements into two groups, one for the client f0 and f1 and the other only for f1
         const findDealClients = (minerId, cid) => {
-          // Check the CID is parsed correctly
+          // Check that the CID is passed correctly
           assert.deepEqual(cid, VALID_MEASUREMENT.cid)
           switch (minerId) {
             case 'f01test':
