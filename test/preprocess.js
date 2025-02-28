@@ -314,14 +314,14 @@ describe('assertValidMeasurement', () => {
     assert.throws(
       () => assertValidMeasurement({
         ...VALID_MEASUREMENT,
-        head_status_code: null,
+        head_status_code: null
       }),
       /`head_status_code` must be a number/
     )
     assert.throws(
       () => assertValidMeasurement({
         ...VALID_MEASUREMENT,
-        head_status_code: /** @type {any} */ ('200'),
+        head_status_code: /** @type {any} */ ('200')
       }),
       /`head_status_code` must be a number/
     )
