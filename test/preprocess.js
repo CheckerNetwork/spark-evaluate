@@ -310,6 +310,22 @@ describe('assertValidMeasurement', () => {
       /field `indexerResult` must be set/
     )
   })
+  it('rejects measurements with OK retrieval result but head_status_code is not a number', () => {
+    assert.throws(
+      () => assertValidMeasurement({
+        ...VALID_MEASUREMENT,
+        head_status_code: null
+      }),
+      /`head_status_code` must be a number/
+    )
+    assert.throws(
+      () => assertValidMeasurement({
+        ...VALID_MEASUREMENT,
+        head_status_code: /** @type {any} */ ('200')
+      }),
+      /`head_status_code` must be a number/
+    )
+  })
 
   it('should throw an error for invalid start_at', () => {
     const measurement = {

@@ -90,7 +90,7 @@ describe('public-stats', () => {
     it('calculates successful http retrievals correctly', async () => {
       /** @type {Measurement[]} */
       const honestMeasurements = [
-        { ...VALID_MEASUREMENT, protocol: 'http', retrievalResult: 'OK' },
+        { ...VALID_MEASUREMENT, protocol: 'http', retrievalResult: 'OK', head_status_code: 200 },
         { ...VALID_MEASUREMENT, protocol: 'graphsync', retrievalResult: 'OK' },
         { ...VALID_MEASUREMENT, protocol: 'http', retrievalResult: 'HTTP_500' },
         { ...VALID_MEASUREMENT, protocol: 'graphsync', retrievalResult: 'LASSIE_500' }
@@ -106,14 +106,14 @@ describe('public-stats', () => {
       })
 
       const { rows: created } = await pgClient.query(
-        'SELECT day::TEXT, total, successful, successful_http FROM retrieval_stats'
+        'SELECT day::TEXT, total, successful, successful_http, successful_http_head FROM retrieval_stats'
       )
       assert.deepStrictEqual(created, [
-        { day: today, total: 4, successful: 2, successful_http: 1 }
+        { day: today, total: 4, successful: 2, successful_http: 1, successful_http_head: 1 }
       ])
 
       // Let's add another successful http retrieval to make sure the updating process works as expected
-      honestMeasurements.push({ ...VALID_MEASUREMENT, retrievalResult: 'OK', protocol: 'http' })
+      honestMeasurements.push({ ...VALID_MEASUREMENT, retrievalResult: 'OK', protocol: 'http', head_status_code: 200 })
       committees = buildEvaluatedCommitteesFromMeasurements(honestMeasurements)
       await updatePublicStats({
         createPgClient,
@@ -123,10 +123,10 @@ describe('public-stats', () => {
       })
 
       const { rows: updated } = await pgClient.query(
-        'SELECT day::TEXT, total, successful, successful_http FROM retrieval_stats'
+        'SELECT day::TEXT, total, successful, successful_http, successful_http_head FROM retrieval_stats'
       )
       assert.deepStrictEqual(updated, [
-        { day: today, total: 4 + 5, successful: 2 + 3, successful_http: 1 + 2 }
+        { day: today, total: 4 + 5, successful: 2 + 3, successful_http: 1 + 2, successful_http_head: 1 + 2 }
       ])
     })
 

@@ -27,6 +27,7 @@ export const VALID_MEASUREMENT = {
   stationId: VALID_STATION_ID,
   inet_group: VALID_INET_GROUP,
   status_code: 200,
+  head_status_code: 200,
   // TODO: these fields are not part of the Measurement object yet
   // timeout: false,
   // car_too_large: false,
