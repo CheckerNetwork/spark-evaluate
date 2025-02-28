@@ -310,15 +310,80 @@ describe('assertValidMeasurement', () => {
       /field `indexerResult` must be set/
     )
   })
-  it('rejects measurements with head_status_code but not status_code', () => {
-    const m = {
-      ...VALID_MEASUREMENT,
-      head_status_code: 200,
-      status_code: null
-    }
+  it('rejects measurements with OK retrieval result but head_status_code is not a number', () => {
     assert.throws(
-      () => assertValidMeasurement(m),
-      /`head_status_code` must have `status_code` as well/
+      () => assertValidMeasurement({
+        ...VALID_MEASUREMENT,
+        head_status_code: null,
+      }),
+      /`head_status_code` must be a number/
     )
+    assert.throws(
+      () => assertValidMeasurement({
+        ...VALID_MEASUREMENT,
+        head_status_code: /** @type {any} */ ('200'),
+      }),
+      /`head_status_code` must be a number/
+    )
+  })
+
+  it('should throw an error for invalid start_at', () => {
+    const measurement = {
+      ...VALID_MEASUREMENT,
+      start_at: -1,
+      first_byte_at: 1672531201000,
+      end_at: 1672531202000
+    }
+    assert.throws(() => assertValidMeasurement(measurement), /field `start_at` must be a number greater than 0/)
+  })
+
+  it('should throw an error for end_at set to 0', () => {
+    const measurement = {
+      ...VALID_MEASUREMENT,
+      start_at: 1672531200000,
+      first_byte_at: 1672531201000,
+      end_at: 0
+    }
+    assert.throws(() => assertValidMeasurement(measurement), /field `end_at` must be a number greater than 0/)
+  })
+
+  it('should throw an error for first_byte_at set to 0', () => {
+    const measurement = {
+      ...VALID_MEASUREMENT,
+      start_at: 1672531200000,
+      first_byte_at: 0,
+      end_at: 1672531202000
+    }
+    assert.throws(() => assertValidMeasurement(measurement), /field `first_byte_at` must be a number greater than 0/)
+  })
+
+  it('should throw an error for start_at greater than end_at', () => {
+    const measurement = {
+      ...VALID_MEASUREMENT,
+      start_at: 1672531203000, // Timestamp for 2023-01-01T00:00:03Z
+      first_byte_at: 1672531201000,
+      end_at: 1672531202000 // Timestamp for 2023-01-01T00:00:02Z
+    }
+    assert.throws(() => assertValidMeasurement(measurement), /end_at must be greater than or equal to start_at/)
+  })
+
+  it('should throw an error for first_byte_at greater than end_at', () => {
+    const measurement = {
+      ...VALID_MEASUREMENT,
+      start_at: 1672531200000,
+      first_byte_at: 1672531203000, // Timestamp for 2023-01-01T00:00:03Z
+      end_at: 1672531202000 // Timestamp for 2023-01-01T00:00:02Z
+    }
+    assert.throws(() => assertValidMeasurement(measurement), /end_at must be greater than or equal to first_byte_at/)
+  })
+
+  it('should throw an error for first_byte_at less than start_at', () => {
+    const measurement = {
+      ...VALID_MEASUREMENT,
+      start_at: 1672531201000, // Timestamp for 2023-01-01T00:00:01Z
+      first_byte_at: 1672531200000, // Timestamp for 2023-01-01T00:00:00Z
+      end_at: 1672531202000
+    }
+    assert.throws(() => assertValidMeasurement(measurement), /first_byte_at must be greater than or equal to start_at/)
   })
 })

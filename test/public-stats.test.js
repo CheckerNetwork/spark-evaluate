@@ -4,7 +4,7 @@ import pg from 'pg'
 import { DATABASE_URL } from '../lib/config.js'
 import { migrateWithPgClient } from '../lib/migrate.js'
 import { buildEvaluatedCommitteesFromMeasurements, VALID_MEASUREMENT } from './helpers/test-data.js'
-import { updatePublicStats } from '../lib/public-stats.js'
+import { updateDailyClientRetrievalStats, updatePublicStats } from '../lib/public-stats.js'
 import { beforeEach } from 'mocha'
 import { groupMeasurementsToCommittees } from '../lib/committee.js'
 
@@ -29,6 +29,7 @@ describe('public-stats', () => {
     await pgClient.query('DELETE FROM indexer_query_stats')
     await pgClient.query('DELETE FROM daily_deals')
     await pgClient.query('DELETE FROM retrieval_timings')
+    await pgClient.query('DELETE FROM daily_client_retrieval_stats')
 
     // Run all tests inside a transaction to ensure `now()` always returns the same value
     // See https://dba.stackexchange.com/a/63549/125312
@@ -573,10 +574,7 @@ describe('public-stats', () => {
         givenTimeToFirstByte({ ...VALID_MEASUREMENT, cid: 'cidone', minerId: 'f1first', retrievalResult: 'OK' }, 1000),
         givenTimeToFirstByte({ ...VALID_MEASUREMENT, cid: 'cidone', minerId: 'f1first', retrievalResult: 'OK' }, 3000),
         givenTimeToFirstByte({ ...VALID_MEASUREMENT, cid: 'cidone', minerId: 'f1second', retrievalResult: 'OK' }, 2000),
-        givenTimeToFirstByte({ ...VALID_MEASUREMENT, cid: 'cidone', minerId: 'f1second', retrievalResult: 'OK' }, 1000),
-        // measurments with invalid values
-        givenTimeToFirstByte({ ...VALID_MEASUREMENT, cid: 'cidone', minerId: 'f1second', retrievalResult: 'OK' }, -1000),
-        { ...VALID_MEASUREMENT, cid: 'cidone', minerId: 'f1second', retrievalResult: 'OK', first_byte_at: /** @type {any} */('invalid') }
+        givenTimeToFirstByte({ ...VALID_MEASUREMENT, cid: 'cidone', minerId: 'f1second', retrievalResult: 'OK' }, 1000)
       ]
 
       /** @type {Measurement[]} */
@@ -626,6 +624,202 @@ describe('public-stats', () => {
         { day: today, miner_id: 'f1first', ttfb_p50: [2000, 3000] },
         { day: today, miner_id: 'f1second', ttfb_p50: [1500] }
       ])
+    })
+
+    describe('updateDailyClientRetrievalStats', () => {
+      it('aggregates per client stats', async () => {
+        // We create multiple measurements with different miner ids and thus key ids
+        // We also want to test multiple different number of measurements for a given combination of (cid,minerId)
+        /** @type {Measurement[]} */
+        const allMeasurements = [
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' }
+        ]
+
+        // Separate the measurements into two groups, one for the client f0 and the other for f1
+        const findDealClients = (minerId, _cid) => {
+          switch (minerId) {
+            case 'f0test':
+              return ['f0client']
+            case 'f1test':
+              return ['f1client']
+            default:
+              throw new Error('Unexpected minerId')
+          }
+        }
+        const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+        const { rows: created } = await pgClient.query(
+          'SELECT * FROM daily_client_retrieval_stats'
+        )
+        assert.deepStrictEqual(created, [])
+        await updateDailyClientRetrievalStats(
+          pgClient,
+          committees,
+          findDealClients
+        )
+        const { rows } = await pgClient.query(
+          `SELECT 
+               day::TEXT, 
+               client_id, 
+               total, 
+               successful, 
+               successful_http 
+            FROM daily_client_retrieval_stats 
+            ORDER BY client_id`)
+
+        assert.deepStrictEqual(rows, [
+          { day: today, client_id: 'f0client', total: 2, successful: 2, successful_http: 2 },
+          { day: today, client_id: 'f1client', total: 3, successful: 3, successful_http: 3 }
+        ])
+      })
+      it('aggregates overlapping per client stats', async () => {
+        /** @type {Measurement[]} */
+        const allMeasurements = [
+          // minerId f01test stores deals for both client f0 and f1
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f01test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f01test' },
+
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' }
+        ]
+
+        // Separate the measurements into two groups, one for the client f0 and f1 and the other only for f1
+        const findDealClients = (minerId, cid) => {
+          // Check that the CID is passed correctly
+          assert.strictEqual(cid, VALID_MEASUREMENT.cid)
+          switch (minerId) {
+            case 'f01test':
+              return ['f0client', 'f1client']
+            case 'f1test':
+              return ['f1client']
+            default:
+              throw new Error('Unexpected minerId')
+          }
+        }
+        const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+        await updateDailyClientRetrievalStats(
+          pgClient,
+          committees,
+          findDealClients
+        )
+        const { rows } = await pgClient.query(
+          `SELECT 
+               day::TEXT, 
+               client_id, 
+               total, 
+               successful, 
+               successful_http 
+            FROM daily_client_retrieval_stats 
+            ORDER BY client_id`)
+
+        assert.deepStrictEqual(rows, [
+          { day: today, client_id: 'f0client', total: 2, successful: 2, successful_http: 2 },
+          { day: today, client_id: 'f1client', total: 5, successful: 5, successful_http: 5 }
+        ])
+      })
+      it('skips clients that have not match for a given miner_id,piece_cid combination', async () => {
+        /** @type {Measurement[]} */
+        const allMeasurements = [
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' }
+        ]
+
+        const findDealClients = (_minerId, _cid) => undefined
+
+        const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+        // We test the warning output by changing the default warn function
+        const originalWarn = console.warn
+        let warnCalled = false
+        console.warn = function (message) {
+          warnCalled = true
+          assert(message.includes('no deal clients found. Excluding the task from daily per-client stats.'))
+        }
+        await updateDailyClientRetrievalStats(
+          pgClient,
+          committees,
+          findDealClients
+        )
+        // Reset warning function
+        console.warn = originalWarn
+
+        // Warning function should have been called
+        assert(warnCalled)
+        const { rows: stats } = await pgClient.query(
+          'SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats'
+        )
+        assert.strictEqual(stats.length, 0, `No stats should be recorded: ${JSON.stringify(stats)}`)
+      })
+      it('updates existing clients rsr scores on conflicting client_id,day pairs', async () => {
+        /** @type {Measurement[]} */
+        const allMeasurements = [
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' }
+        ]
+
+        const findDealClients = (_minerId, _cid) => ['f0client']
+
+        let committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+        await updateDailyClientRetrievalStats(
+          pgClient,
+          committees,
+          findDealClients
+        )
+        let { rows: stats } = await pgClient.query(
+          'SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats'
+        )
+        assert.strictEqual(stats.length, 1)
+        assert.deepStrictEqual(stats, [
+          { day: today, client_id: 'f0client', total: 1, successful: 1, successful_http: 1 }
+        ])
+
+        // We now create another round of measurements for the same client and day
+        allMeasurements.push(
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' }
+        )
+        committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+        await updateDailyClientRetrievalStats(
+          pgClient,
+          committees,
+          findDealClients
+        )
+        stats = (await pgClient.query(
+          'SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats'
+        )).rows
+        assert.strictEqual(stats.length, 1)
+        assert.deepStrictEqual(stats, [
+          { day: today, client_id: 'f0client', total: 4, successful: 4, successful_http: 4 }
+        ])
+      })
+      it('correctly handles different protocols and retrieval results', async () => {
+        // We create multiple measurements that have different combinations of protocols and retrieval results
+        /** @type {Measurement[]} */
+        const allMeasurements = [
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+          { ...VALID_MEASUREMENT, protocol: 'NOT_HTTP', minerId: 'f0test' },
+          { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test', retrievalResult: 'HTTP_404' }
+        ]
+        const findDealClients = (_minerId, _cid) => ['f0client']
+
+        const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+        await updateDailyClientRetrievalStats(
+          pgClient,
+          committees,
+          findDealClients
+        )
+        const { rows: stats } = await pgClient.query(
+          'SELECT day::TEXT,client_id,total,successful,successful_http FROM daily_client_retrieval_stats'
+        )
+        // Http protocols should be counted as successful and successful_http while other protocols should only be counted as successful
+        // Measurements with retrievalResult HTTP_404 should only be counted to the total number of results
+        assert.deepStrictEqual(stats, [
+          { day: today, client_id: 'f0client', total: 3, successful: 2, successful_http: 1 }
+        ])
+      })
     })
   })
 
