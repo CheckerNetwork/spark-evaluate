@@ -30,7 +30,7 @@
         "@sentry/node": "^9.3.0",
         "@ucanto/core": "^10.3.1",
         "@ucanto/principal": "^9.0.2",
-        "@web3-storage/car-block-validator": "^1.2.1",
+        "@web3-storage/car-block-validator": "^1.2.2",
         "@web3-storage/w3up-client": "^16.5.2",
         "debug": "^4.4.0",
         "drand-client": "^1.2.6",
