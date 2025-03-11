@@ -314,6 +314,7 @@ describe('assertValidMeasurement', () => {
     assert.throws(
       () => assertValidMeasurement({
         ...VALID_MEASUREMENT,
+        protocol: 'http',
         head_status_code: null
       }),
       /`head_status_code` must be a number/
@@ -321,9 +322,37 @@ describe('assertValidMeasurement', () => {
     assert.throws(
       () => assertValidMeasurement({
         ...VALID_MEASUREMENT,
+        protocol: 'http',
         head_status_code: /** @type {any} */ ('200')
       }),
       /`head_status_code` must be a number/
+    )
+  })
+
+  it('accepts Graphsync measurements with OK retrieval result and head_status_code is null', () => {
+    assertValidMeasurement({
+      ...VALID_MEASUREMENT,
+      protocol: 'graphsync',
+      head_status_code: null
+
+    })
+  })
+
+  it('accepts Graphsync measurements with OK retrieval result and head_status_code is undefined', () => {
+    assertValidMeasurement({
+      ...VALID_MEASUREMENT,
+      protocol: 'graphsync',
+      head_status_code: undefined
+    })
+  })
+
+  it('rejects Graphsync measurements with head_status_code not null/undefined ', () => {
+    assert.throws(
+      () => assertValidMeasurement({
+        ...VALID_MEASUREMENT,
+        head_status_code: /** @type {any} */ ('200')
+      }),
+      /`head_status_code` must be undefined/
     )
   })
 
