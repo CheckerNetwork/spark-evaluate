@@ -4,7 +4,7 @@ import pg from 'pg'
 import { DATABASE_URL } from '../lib/config.js'
 import { migrateWithPgClient } from '../lib/migrate.js'
 import { buildEvaluatedCommitteesFromMeasurements, VALID_MEASUREMENT } from './helpers/test-data.js'
-import { updateDailyClientRetrievalStats, updatePublicStats } from '../lib/public-stats.js'
+import { updateDailyAllocatorRetrievalStats, updateDailyClientRetrievalStats, updatePublicStats } from '../lib/public-stats.js'
 import { beforeEach } from 'mocha'
 import { groupMeasurementsToCommittees } from '../lib/committee.js'
 
@@ -30,6 +30,7 @@ describe('public-stats', () => {
     await pgClient.query('DELETE FROM daily_deals')
     await pgClient.query('DELETE FROM retrieval_timings')
     await pgClient.query('DELETE FROM daily_client_retrieval_stats')
+    await pgClient.query('DELETE FROM daily_allocator_retrieval_stats')
 
     // Run all tests inside a transaction to ensure `now()` always returns the same value
     // See https://dba.stackexchange.com/a/63549/125312
@@ -61,7 +62,8 @@ describe('public-stats', () => {
         createPgClient,
         committees,
         allMeasurements,
-        findDealClients: (_minerId, _cid) => ['f0client']
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
       })
 
       const { rows: created } = await pgClient.query(
@@ -77,7 +79,8 @@ describe('public-stats', () => {
         createPgClient,
         committees,
         allMeasurements,
-        findDealClients: (_minerId, _cid) => ['f0client']
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
       })
 
       const { rows: updated } = await pgClient.query(
@@ -102,7 +105,8 @@ describe('public-stats', () => {
         createPgClient,
         committees,
         allMeasurements,
-        findDealClients: (_minerId, _cid) => ['f0client']
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
       })
 
       const { rows: created } = await pgClient.query(
@@ -119,7 +123,8 @@ describe('public-stats', () => {
         createPgClient,
         committees,
         allMeasurements,
-        findDealClients: (_minerId, _cid) => ['f0client']
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
       })
 
       const { rows: updated } = await pgClient.query(
@@ -145,7 +150,8 @@ describe('public-stats', () => {
         createPgClient,
         committees,
         allMeasurements,
-        findDealClients: (_minerId, _cid) => ['f0client']
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
       })
       const { rows: created } = await pgClient.query(
         'SELECT day::TEXT, miner_id, total, successful FROM retrieval_stats'
@@ -163,7 +169,8 @@ describe('public-stats', () => {
         createPgClient,
         committees,
         allMeasurements,
-        findDealClients: (_minerId, _cid) => ['f0client']
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
       })
 
       const { rows: updated } = await pgClient.query(
@@ -204,7 +211,8 @@ describe('public-stats', () => {
         createPgClient,
         committees,
         allMeasurements,
-        findDealClients: (_minerId, _cid) => ['f0client']
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
       })
 
       const { rows: created } = await pgClient.query(
@@ -231,7 +239,8 @@ describe('public-stats', () => {
         createPgClient,
         committees,
         allMeasurements,
-        findDealClients: (_minerId, _cid) => ['f0client']
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
       })
 
       const { rows: created } = await pgClient.query(
@@ -252,7 +261,8 @@ describe('public-stats', () => {
         createPgClient,
         committees,
         allMeasurements,
-        findDealClients: (_minerId, _cid) => ['f0client']
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
       })
 
       const { rows: updated } = await pgClient.query(
@@ -281,7 +291,8 @@ describe('public-stats', () => {
         createPgClient,
         committees,
         allMeasurements,
-        findDealClients: (_minerId, _cid) => ['f0client']
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
       })
 
       const { rows: created } = await pgClient.query(
@@ -303,7 +314,8 @@ describe('public-stats', () => {
         createPgClient,
         committees,
         allMeasurements,
-        findDealClients: (_minerId, _cid) => ['f0client']
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
       })
 
       const { rows: updated } = await pgClient.query(
@@ -320,6 +332,7 @@ describe('public-stats', () => {
 
     it('records client_id by creating one row per client', async () => {
       const findDealClients = (_minerId, _cid) => ['f0clientA', 'f0clientB']
+      const findDealAllocators = (_minerId, _cid) => ['f0allocator']
 
       // Create new records
       {
@@ -335,7 +348,8 @@ describe('public-stats', () => {
           createPgClient,
           committees,
           allMeasurements,
-          findDealClients
+          findDealClients,
+          findDealAllocators
         })
 
         const { rows: created } = await pgClient.query(
@@ -360,7 +374,8 @@ describe('public-stats', () => {
           createPgClient,
           committees,
           allMeasurements,
-          findDealClients
+          findDealClients,
+          findDealAllocators
         })
 
         const { rows: updated } = await pgClient.query(
@@ -375,7 +390,7 @@ describe('public-stats', () => {
 
     it('records index_majority_found, indexed, indexed_http', async () => {
       const findDealClients = (_minerId, _cid) => ['f0client']
-
+      const findDealAllocators = (_minerId, _cid) => ['f0allocator']
       // Create new record(s)
       {
         /** @type {Measurement[]} */
@@ -412,7 +427,8 @@ describe('public-stats', () => {
           createPgClient,
           committees,
           allMeasurements,
-          findDealClients
+          findDealClients,
+          findDealAllocators
         })
 
         const { rows: created } = await pgClient.query(
@@ -450,7 +466,8 @@ describe('public-stats', () => {
           createPgClient,
           committees,
           allMeasurements,
-          findDealClients
+          findDealClients,
+          findDealAllocators
         })
 
         const { rows: created } = await pgClient.query(
@@ -464,7 +481,7 @@ describe('public-stats', () => {
 
     it('records retrieval_majority_found, retrievable', async () => {
       const findDealClients = (_minerId, _cid) => ['f0client']
-
+      const findDealAllocators = (_minerId, _cid) => ['f0allocator']
       // Create new record(s)
       {
         /** @type {Measurement[]} */
@@ -496,7 +513,8 @@ describe('public-stats', () => {
           createPgClient,
           committees,
           allMeasurements,
-          findDealClients
+          findDealClients,
+          findDealAllocators
         })
 
         const { rows: created } = await pgClient.query(
@@ -531,7 +549,8 @@ describe('public-stats', () => {
           createPgClient,
           committees,
           allMeasurements,
-          findDealClients
+          findDealClients,
+          findDealAllocators
         })
         const { rows: created } = await pgClient.query(
           'SELECT day::TEXT, tested, retrieval_majority_found, retrievable FROM daily_deals'
@@ -544,6 +563,7 @@ describe('public-stats', () => {
 
     it('handles a task not linked to any clients', async () => {
       const findDealClients = (_minerId, _cid) => undefined
+      const findDealAllocators = (_minerId, _cid) => ['f0allocator']
 
       /** @type {Measurement[]} */
       const honestMeasurements = [
@@ -557,7 +577,8 @@ describe('public-stats', () => {
         createPgClient,
         committees,
         allMeasurements,
-        findDealClients
+        findDealClients,
+        findDealAllocators
       })
 
       const { rows: created } = await pgClient.query(
@@ -594,7 +615,8 @@ describe('public-stats', () => {
         createPgClient,
         committees,
         allMeasurements,
-        findDealClients: (_minerId, _cid) => ['f0client']
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
       })
       const { rows: created } = await pgClient.query(
         'SELECT day::TEXT, miner_id, ttfb_p50 FROM retrieval_timings ORDER BY miner_id'
@@ -615,7 +637,8 @@ describe('public-stats', () => {
         createPgClient,
         committees,
         allMeasurements,
-        findDealClients: (_minerId, _cid) => ['f0client']
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
       })
       const { rows: updated } = await pgClient.query(
         'SELECT day::TEXT, miner_id, ttfb_p50 FROM retrieval_timings ORDER BY miner_id'
@@ -819,6 +842,201 @@ describe('public-stats', () => {
         assert.deepStrictEqual(stats, [
           { day: today, client_id: 'f0client', total: 3, successful: 2, successful_http: 1 }
         ])
+      })
+      describe('updateDailyAggregatorRetrievalStats', () => {
+        it('aggregates per aggregator stats', async () => {
+          // We create multiple measurements with different miner ids and thus key ids
+          // We also want to test multiple different number of measurements for a given combination of (cid,minerId)
+          /** @type {Measurement[]} */
+          const allMeasurements = [
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' },
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' },
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' }
+          ]
+
+          // Separate the measurements into two groups, one for the allocator f0 and the other for f1
+          const findDealAllocators = (minerId, _cid) => {
+            switch (minerId) {
+              case 'f0test':
+                return ['f0allocator']
+              case 'f1test':
+                return ['f1allocator']
+              default:
+                throw new Error('Unexpected minerId')
+            }
+          }
+          const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+          const { rows: created } = await pgClient.query(
+            'SELECT * FROM daily_allocator_retrieval_stats'
+          )
+          assert.deepStrictEqual(created, [])
+          await updateDailyAllocatorRetrievalStats(
+            pgClient,
+            committees,
+            findDealAllocators
+          )
+          const { rows } = await pgClient.query(
+            `SELECT
+                 day::TEXT,
+                 allocator_id,
+                 total,
+                 successful,
+                 successful_http
+              FROM daily_allocator_retrieval_stats
+              ORDER BY allocator_id`)
+
+          assert.deepStrictEqual(rows, [
+            { day: today, allocator_id: 'f0allocator', total: 2, successful: 2, successful_http: 2 },
+            { day: today, allocator_id: 'f1allocator', total: 3, successful: 3, successful_http: 3 }
+          ])
+        })
+        it('aggregates overlapping per allocator stats', async () => {
+          /** @type {Measurement[]} */
+          const allMeasurements = [
+            // minerId f01test stores deals for both allocator f0 and f1
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f01test' },
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f01test' },
+
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' },
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' },
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' }
+          ]
+
+          // Separate the measurements into two groups, one for the allocator f0 and f1 and the other only for f1
+          const findDealAllocators = (minerId, cid) => {
+            // Check that the CID is passed correctly
+            assert.strictEqual(cid, VALID_MEASUREMENT.cid)
+            switch (minerId) {
+              case 'f01test':
+                return ['f0allocator', 'f1allocator']
+              case 'f1test':
+                return ['f1allocator']
+              default:
+                throw new Error('Unexpected minerId')
+            }
+          }
+          const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+          await updateDailyAllocatorRetrievalStats(
+            pgClient,
+            committees,
+            findDealAllocators
+          )
+          const { rows } = await pgClient.query(
+            `SELECT
+                 day::TEXT,
+                 allocator_id,
+                 total,
+                 successful,
+                 successful_http
+              FROM daily_allocator_retrieval_stats
+              ORDER BY allocator_id`)
+
+          assert.deepStrictEqual(rows, [
+            { day: today, allocator_id: 'f0allocator', total: 2, successful: 2, successful_http: 2 },
+            { day: today, allocator_id: 'f1allocator', total: 5, successful: 5, successful_http: 5 }
+          ])
+        })
+        it('skips allocators that have not match for a given miner_id,piece_cid combination', async () => {
+          /** @type {Measurement[]} */
+          const allMeasurements = [
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f1test' }
+          ]
+
+          const findDealAllocators = (_minerId, _cid) => undefined
+
+          const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+          // We test the warning output by changing the default warn function
+          const originalWarn = console.warn
+          let warnCalled = false
+          console.warn = function (message) {
+            warnCalled = true
+            assert(message.includes('no deal allocators found. Excluding the task from daily per-allocator stats.'))
+          }
+          await updateDailyAllocatorRetrievalStats(
+            pgClient,
+            committees,
+            findDealAllocators
+          )
+          // Reset warning function
+          console.warn = originalWarn
+
+          // Warning function should have been called
+          assert(warnCalled)
+          const { rows: stats } = await pgClient.query(
+            'SELECT day::TEXT,allocator_id,total,successful,successful_http FROM daily_allocator_retrieval_stats'
+          )
+          assert.strictEqual(stats.length, 0, `No stats should be recorded: ${JSON.stringify(stats)}`)
+        })
+        it('updates existing allocators rsr scores on conflicting allocator_id,day pairs', async () => {
+          /** @type {Measurement[]} */
+          const allMeasurements = [
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' }
+          ]
+
+          const findDealAllocators = (_minerId, _cid) => ['f0allocator']
+
+          let committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+          await updateDailyAllocatorRetrievalStats(
+            pgClient,
+            committees,
+            findDealAllocators
+          )
+          let { rows: stats } = await pgClient.query(
+            'SELECT day::TEXT,allocator_id,total,successful,successful_http FROM daily_allocator_retrieval_stats'
+          )
+          assert.strictEqual(stats.length, 1)
+          assert.deepStrictEqual(stats, [
+            { day: today, allocator_id: 'f0allocator', total: 1, successful: 1, successful_http: 1 }
+          ])
+
+          // We now create another round of measurements for the same allocator and day
+          allMeasurements.push(
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' }
+          )
+          committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+          await updateDailyAllocatorRetrievalStats(
+            pgClient,
+            committees,
+            findDealAllocators
+          )
+          stats = (await pgClient.query(
+            'SELECT day::TEXT,allocator_id,total,successful,successful_http FROM daily_allocator_retrieval_stats'
+          )).rows
+          assert.strictEqual(stats.length, 1)
+          assert.deepStrictEqual(stats, [
+            { day: today, allocator_id: 'f0allocator', total: 4, successful: 4, successful_http: 4 }
+          ])
+        })
+        it('correctly handles different protocols and retrieval results', async () => {
+          // We create multiple measurements that have different combinations of protocols and retrieval results
+          /** @type {Measurement[]} */
+          const allMeasurements = [
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
+            { ...VALID_MEASUREMENT, protocol: 'NOT_HTTP', minerId: 'f0test' },
+            { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test', retrievalResult: 'HTTP_404' }
+          ]
+          const findDealAllocators = (_minerId, _cid) => ['f0allocator']
+
+          const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
+          await updateDailyAllocatorRetrievalStats(
+            pgClient,
+            committees,
+            findDealAllocators
+          )
+          const { rows: stats } = await pgClient.query(
+            'SELECT day::TEXT,allocator_id,total,successful,successful_http FROM daily_allocator_retrieval_stats'
+          )
+          // Http protocols should be counted as successful and successful_http while other protocols should only be counted as successful
+          // Measurements with retrievalResult HTTP_404 should only be counted to the total number of results
+          assert.deepStrictEqual(stats, [
+            { day: today, allocator_id: 'f0allocator', total: 3, successful: 2, successful_http: 1 }
+          ])
+        })
       })
     })
   })

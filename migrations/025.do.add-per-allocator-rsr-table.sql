@@ -4,5 +4,5 @@ CREATE TABLE daily_allocator_retrieval_stats (
   total INTEGER NOT NULL,
   successful INTEGER NOT NULL, 
   successful_http INTEGER NOT NULL,
-  PRIMARY KEY (day, client_id)
+  PRIMARY KEY (day, allocator_id)
 );

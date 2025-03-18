@@ -24,12 +24,14 @@ describe('spark-api client', () => {
       {
         cid: 'bafkreia3oovvt7sws7wnz43zbr33lsu2yrdmx4mqswdumravjrnxfoxdka',
         minerId: 'f02228866',
-        clients: ['f01990536']
+        clients: ['f01990536'],
+        allocators: null
       },
       {
         cid: 'bafkreibipuscsrko7tlrw62rttqvbma3qqqkksjoi6bhvwp27qaylwupp4',
         minerId: 'f02982293',
-        clients: ['f03064945']
+        clients: ['f03064945'],
+        allocators: null
       }
     ])
   })

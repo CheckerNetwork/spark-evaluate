@@ -12,6 +12,7 @@ export interface RetrievalTask {
   cid: string;
   minerId: string;
   clients?: string[];
+  allocators?: string[];
 }
 
 /**
