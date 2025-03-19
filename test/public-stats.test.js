@@ -939,7 +939,7 @@ describe('public-stats', () => {
             { day: today, allocator_id: 'f1allocator', total: 5, successful: 5, successful_http: 5 }
           ])
         })
-        it('skips allocators that have not match for a given miner_id,piece_cid combination', async () => {
+        it('skips allocators that have no match for a given miner_id,piece_cid combination', async () => {
           /** @type {Measurement[]} */
           const allMeasurements = [
             { ...VALID_MEASUREMENT, protocol: 'http', minerId: 'f0test' },
