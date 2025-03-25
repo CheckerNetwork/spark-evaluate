@@ -102,17 +102,11 @@ async function processRound (roundIndex, measurements, resultCounts) {
   }
 
   for (const m of round.measurements) {
+    if (m.taskingEvaluation !== 'OK') continue
     resultCounts.total++
-
-    let status
-    if (m.taskingEvaluation !== 'OK') {
-      status = m.taskingEvaluation
-    } else if (m.consensusEvaluation !== 'MAJORITY_RESULT') {
-      status = m.consensusEvaluation
-    } else {
-      status = m.retrievalResult
-    }
-
+    const status = m.consensusEvaluation !== 'MAJORITY_RESULT'
+      ? m.consensusEvaluation
+      : m.retrievalResult
     resultCounts[status] = (resultCounts[status] ?? 0) + 1
   }
 
