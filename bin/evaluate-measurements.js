@@ -42,7 +42,7 @@ const EVALUATION_NDJSON_FILE = `${basename(measurementsPath, '.ndjson')}.evaluat
 const evaluationTxtWriter = fs.createWriteStream(EVALUATION_TXT_FILE)
 const evaluationNdjsonWriter = fs.createWriteStream(EVALUATION_NDJSON_FILE)
 
-evaluationTxtWriter.write(formatHeader({ includeEvaluation: keepRejected }) + '\n')
+evaluationTxtWriter.write(formatHeader({ keepRejected }) + '\n')
 
 const resultCounts = {
   total: 0
@@ -97,27 +97,22 @@ async function processRound (roundIndex, measurements, resultCounts) {
     prepareProviderRetrievalResultStats: async () => {}
   })
 
-  for (const m of round.measurements) {
-    // FIXME: we should include non-majority measurements too
-    // See https://github.com/filecoin-station/spark-evaluate/pull/396
-    if (m.taskingEvaluation !== 'OK' && m.consensusEvaluation === 'MAJORITY_RESULT') continue
-    resultCounts.total++
-    resultCounts[m.retrievalResult] = (resultCounts[m.retrievalResult] ?? 0) + 1
+  if (!keepRejected) {
+    round.measurements = round.measurements.filter(m => m.taskingEvaluation === 'OK')
   }
 
-  if (!keepRejected) {
-    round.measurements = round.measurements
-      // Keep accepted measurements only
-      // FIXME: we should include non-majority measurements too
-      // See https://github.com/filecoin-station/spark-evaluate/pull/396
-      .filter(m => m.taskingEvaluation === 'OK' && m.consensusEvaluation === 'MAJORITY_RESULT')
-      // Remove the taskingEvaluation and consensusEvaluation fields as all accepted measurements have the same value
-      .map(m => ({ ...m, taskingEvaluation: undefined, majorityEvaluation: undefined }))
+  for (const m of round.measurements) {
+    if (m.taskingEvaluation !== 'OK') continue
+    resultCounts.total++
+    const status = m.consensusEvaluation !== 'MAJORITY_RESULT'
+      ? m.consensusEvaluation
+      : m.retrievalResult
+    resultCounts[status] = (resultCounts[status] ?? 0) + 1
   }
 
   evaluationTxtWriter.write(
     round.measurements
-      .map(m => formatMeasurement(m, { includeEvaluation: keepRejected }) + '\n')
+      .map(m => formatMeasurement(m, { keepRejected }) + '\n')
       .join('')
   )
   evaluationNdjsonWriter.write(
@@ -148,21 +143,20 @@ function isFlagEnabled (envVarValue) {
 /**
  * @param {import('../lib/preprocess.js').Measurement} m
  * @param {object} options
- * @param {boolean} [options.includeEvaluation]
+ * @param {boolean} [options.keepRejected]
  */
-function formatMeasurement (m, { includeEvaluation } = {}) {
+function formatMeasurement (m, { keepRejected } = {}) {
   const fields = [
     new Date(m.finished_at).toISOString(),
     (m.cid ?? '').padEnd(70),
     (m.protocol ?? '').padEnd(10)
   ]
 
-  if (includeEvaluation) {
-    // FIXME: we should distinguish tasking and majority evaluation
-    // See https://github.com/filecoin-station/spark-evaluate/pull/396
-    fields.push((m.taskingEvaluation === 'OK' && m.consensusEvaluation === 'MAJORITY_RESULT' ? '🫡  ' : '🙅  '))
+  if (keepRejected) {
+    fields.push((m.taskingEvaluation === 'OK' ? '🫡' : '🙅').padEnd(7))
   }
 
+  fields.push((m.consensusEvaluation === 'MAJORITY_RESULT' ? '✅' : '❌').padEnd(9))
   fields.push((m.retrievalResult ?? ''))
 
   return fields.join(' ')
@@ -170,19 +164,20 @@ function formatMeasurement (m, { includeEvaluation } = {}) {
 
 /**
  * @param {object} options
- * @param {boolean} [options.includeEvaluation]
+ * @param {boolean} [options.keepRejected]
  */
-function formatHeader ({ includeEvaluation } = {}) {
+function formatHeader ({ keepRejected } = {}) {
   const fields = [
     'Timestamp'.padEnd(new Date().toISOString().length),
     'CID'.padEnd(70),
     'Protocol'.padEnd(10)
   ]
 
-  if (includeEvaluation) {
-    fields.push('🕵️  ')
+  if (keepRejected) {
+    fields.push('Tasking')
   }
 
+  fields.push('Consensus')
   fields.push('RetrievalResult')
 
   return fields.join(' ')
