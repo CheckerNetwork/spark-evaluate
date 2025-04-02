@@ -222,6 +222,44 @@ describe('public-stats', () => {
         { day: today, total: 3, successful: 2, successful_http: 0 }
       ])
     })
+
+    it('excludes IPNI 5xx results', async () => {
+      /** @type {Measurement[]} */
+      const allMeasurements = [
+        { ...VALID_MEASUREMENT, retrievalResult: 'OK' },
+        { ...VALID_MEASUREMENT, retrievalResult: 'OK' },
+        { ...VALID_MEASUREMENT, retrievalResult: 'OK' },
+        { ...VALID_MEASUREMENT, retrievalResult: 'IPNI_ERROR_504' },
+        { ...VALID_MEASUREMENT, retrievalResult: 'TIMEOUT' }
+      ]
+      for (const m of allMeasurements) m.taskingEvaluation = 'OK'
+      const committees = [...groupMeasurementsToCommittees(allMeasurements).values()]
+      assert.strictEqual(committees.length, 1)
+      committees[0].evaluate({ requiredCommitteeSize: 3 })
+      assert.deepStrictEqual(allMeasurements.map(m => m.consensusEvaluation), [
+        'MAJORITY_RESULT',
+        'MAJORITY_RESULT',
+        'MAJORITY_RESULT',
+        'MINORITY_RESULT',
+        'MINORITY_RESULT'
+      ])
+
+      await updatePublicStats({
+        createPgClient,
+        committees,
+        allMeasurements,
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
+      })
+
+      const { rows: created } = await pgClient.query(
+        'SELECT day::TEXT, total, successful FROM retrieval_stats'
+      )
+      // 5 measurements were recorded in total, but only 4 are counted
+      assert.deepStrictEqual(created, [
+        { day: today, total: 4, successful: 3 }
+      ])
+    })
   })
 
   describe('indexer_query_stats', () => {
@@ -844,6 +882,51 @@ describe('public-stats', () => {
         { day: today, client_id: 'f0client', total: 3, successful: 2, successful_http: 1 }
       ])
     })
+
+    it('excludes IPNI 5xx results', async () => {
+      /** @type {Measurement[]} */
+      const allMeasurements = [
+        { ...VALID_MEASUREMENT, retrievalResult: 'OK' },
+        { ...VALID_MEASUREMENT, retrievalResult: 'OK' },
+        { ...VALID_MEASUREMENT, retrievalResult: 'OK' },
+        { ...VALID_MEASUREMENT, retrievalResult: 'IPNI_ERROR_504' },
+        { ...VALID_MEASUREMENT, retrievalResult: 'TIMEOUT' }
+      ]
+      for (const m of allMeasurements) m.taskingEvaluation = 'OK'
+      const committees = [...groupMeasurementsToCommittees(allMeasurements).values()]
+      assert.strictEqual(committees.length, 1)
+      committees[0].evaluate({ requiredCommitteeSize: 3 })
+      assert.deepStrictEqual(allMeasurements.map(m => m.consensusEvaluation), [
+        'MAJORITY_RESULT',
+        'MAJORITY_RESULT',
+        'MAJORITY_RESULT',
+        'MINORITY_RESULT',
+        'MINORITY_RESULT'
+      ])
+
+      await updatePublicStats({
+        createPgClient,
+        committees,
+        allMeasurements,
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
+      })
+
+      const { rows: created } = await pgClient.query(
+        'SELECT day::TEXT, total, successful FROM retrieval_stats'
+      )
+      assert.deepStrictEqual(created, [
+        { day: today, total: 4, successful: 3 }
+      ])
+
+      const { rows: stats } = await pgClient.query(
+        'SELECT day::TEXT, client_id, total, successful FROM daily_client_retrieval_stats'
+      )
+      assert.deepStrictEqual(stats, [
+        // 5 measurements were recorded in total, but only 4 are counted
+        { day: today, client_id: 'f0client', total: 4, successful: 3 }
+      ])
+    })
   })
 
   describe('updateDailyAllocatorRetrievalStats', () => {
@@ -1038,6 +1121,51 @@ describe('public-stats', () => {
       // Measurements with retrievalResult HTTP_404 should only be counted to the total number of results
       assert.deepStrictEqual(stats, [
         { day: today, allocator_id: 'f0allocator', total: 3, successful: 2, successful_http: 1 }
+      ])
+    })
+
+    it('excludes IPNI 5xx results', async () => {
+      /** @type {Measurement[]} */
+      const allMeasurements = [
+        { ...VALID_MEASUREMENT, retrievalResult: 'OK' },
+        { ...VALID_MEASUREMENT, retrievalResult: 'OK' },
+        { ...VALID_MEASUREMENT, retrievalResult: 'OK' },
+        { ...VALID_MEASUREMENT, retrievalResult: 'IPNI_ERROR_504' },
+        { ...VALID_MEASUREMENT, retrievalResult: 'TIMEOUT' }
+      ]
+      for (const m of allMeasurements) m.taskingEvaluation = 'OK'
+      const committees = [...groupMeasurementsToCommittees(allMeasurements).values()]
+      assert.strictEqual(committees.length, 1)
+      committees[0].evaluate({ requiredCommitteeSize: 3 })
+      assert.deepStrictEqual(allMeasurements.map(m => m.consensusEvaluation), [
+        'MAJORITY_RESULT',
+        'MAJORITY_RESULT',
+        'MAJORITY_RESULT',
+        'MINORITY_RESULT',
+        'MINORITY_RESULT'
+      ])
+
+      await updatePublicStats({
+        createPgClient,
+        committees,
+        allMeasurements,
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
+      })
+
+      const { rows: created } = await pgClient.query(
+        'SELECT day::TEXT, total, successful FROM retrieval_stats'
+      )
+      assert.deepStrictEqual(created, [
+        { day: today, total: 4, successful: 3 }
+      ])
+
+      const { rows: stats } = await pgClient.query(
+        'SELECT day::TEXT, allocator_id, total, successful FROM daily_allocator_retrieval_stats'
+      )
+      assert.deepStrictEqual(stats, [
+        // 5 measurements were recorded in total, but only 4 are counted
+        { day: today, allocator_id: 'f0allocator', total: 4, successful: 3 }
       ])
     })
   })
