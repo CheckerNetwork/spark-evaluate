@@ -136,10 +136,12 @@ describe('retrieval statistics', () => {
     /** @type {Measurement[]} */
     const measurements = [
       {
-        ...VALID_MEASUREMENT
+        ...VALID_MEASUREMENT,
+        protocol: 'http'
       },
       {
         ...VALID_MEASUREMENT,
+        protocol: 'http',
         retrievalResult: 'IPNI_ERROR_504',
         indexerResult: 'ERROR_504'
       }
@@ -152,6 +154,7 @@ describe('retrieval statistics', () => {
     assertPointFieldValue(point, 'measurements', '2i')
     assertPointFieldValue(point, 'total_for_success_rates', '1i')
     assertPointFieldValue(point, 'success_rate', '1')
+    assertPointFieldValue(point, 'success_rate_http', '1')
   })
 
   it('handles when all measurements reported IPNI 5xx', async () => {
@@ -171,6 +174,7 @@ describe('retrieval statistics', () => {
     assertPointFieldValue(point, 'measurements', '1i')
     assertPointFieldValue(point, 'total_for_success_rates', '0i')
     assertPointFieldValue(point, 'success_rate', '0')
+    assertPointFieldValue(point, 'success_rate_http', '0')
   })
 
   it('handles first_byte_at set to unix epoch', () => {
