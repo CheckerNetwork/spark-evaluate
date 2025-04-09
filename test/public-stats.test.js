@@ -31,6 +31,7 @@ describe('public-stats', () => {
     await pgClient.query('DELETE FROM retrieval_timings')
     await pgClient.query('DELETE FROM daily_client_retrieval_stats')
     await pgClient.query('DELETE FROM daily_allocator_retrieval_stats')
+    await pgClient.query('DELETE FROM daily_network_retrieval_stats')
 
     // Run all tests inside a transaction to ensure `now()` always returns the same value
     // See https://dba.stackexchange.com/a/63549/125312
