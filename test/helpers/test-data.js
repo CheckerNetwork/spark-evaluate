@@ -43,7 +43,12 @@ export const VALID_MEASUREMENT = {
   retrievalResult: 'OK',
   indexerResult: 'OK',
   taskingEvaluation: null,
-  consensusEvaluation: null
+  consensusEvaluation: null,
+  networkRetrievalResult: 'OK',
+  networkRetrievalStatusCode: null,
+  networkRetrievalTimeout: false,
+  networkRetrievalCarTooLarge: false,
+  networkRetrievalEndAt: null
 }
 
 // Fraud detection is mutating the measurements parsed from JSON
