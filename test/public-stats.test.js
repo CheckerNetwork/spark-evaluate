@@ -1181,7 +1181,7 @@ describe('public-stats', () => {
           { ...VALID_MEASUREMENT, networkRetrievalResult: 'IPNI_ERROR_FETCH' }
         ]
 
-        const committees = groupMeasurementsToCommittees(allMeasurements)
+        const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
         const { rows: created } = await pgClient.query(
           'SELECT * FROM daily_network_retrieval_stats'
         )
