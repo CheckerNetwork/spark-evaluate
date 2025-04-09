@@ -4,7 +4,7 @@ import pg from 'pg'
 import { DATABASE_URL } from '../lib/config.js'
 import { migrateWithPgClient } from '../lib/migrate.js'
 import { buildEvaluatedCommitteesFromMeasurements, VALID_MEASUREMENT } from './helpers/test-data.js'
-import { updateDailyAllocatorRetrievalStats, updateDailyClientRetrievalStats, updatePublicStats } from '../lib/public-stats.js'
+import { updateDailyAllocatorRetrievalStats, updateDailyClientRetrievalStats, updateDailyNetworkRetrievalStats, updatePublicStats } from '../lib/public-stats.js'
 import { beforeEach } from 'mocha'
 import { groupMeasurementsToCommittees } from '../lib/committee.js'
 
@@ -724,7 +724,7 @@ describe('public-stats', () => {
         findDealClients
       )
       const { rows } = await pgClient.query(
-          `SELECT
+        `SELECT
                day::TEXT,
                client_id,
                total,
@@ -770,7 +770,7 @@ describe('public-stats', () => {
         findDealClients
       )
       const { rows } = await pgClient.query(
-          `SELECT
+        `SELECT
                day::TEXT,
                client_id,
                total,
@@ -965,7 +965,7 @@ describe('public-stats', () => {
         findDealAllocators
       )
       const { rows } = await pgClient.query(
-            `SELECT
+        `SELECT
                  day::TEXT,
                  allocator_id,
                  total,
@@ -1011,7 +1011,7 @@ describe('public-stats', () => {
         findDealAllocators
       )
       const { rows } = await pgClient.query(
-            `SELECT
+        `SELECT
                  day::TEXT,
                  allocator_id,
                  total,
@@ -1167,6 +1167,40 @@ describe('public-stats', () => {
         // 5 measurements were recorded in total, but only 4 are counted
         { day: today, allocator_id: 'f0allocator', total: 4, successful: 3 }
       ])
+    })
+
+    describe('updateDailyNetworkRetrievalStats ', () => {
+      it('creates or updates the row for today', async () => {
+        /** @type {Measurement[]} */
+        const allMeasurements = [
+          { ...VALID_MEASUREMENT, networkRetrievalResult: 'OK' },
+          { ...VALID_MEASUREMENT, networkRetrievalResult: 'OK' },
+
+          { ...VALID_MEASUREMENT, networkRetrievalResult: 'TIMEOUT' },
+          { ...VALID_MEASUREMENT, networkRetrievalResult: 'CAR_TOO_LARGE' },
+          { ...VALID_MEASUREMENT, networkRetrievalResult: 'IPNI_ERROR_FETCH' }
+        ]
+
+        const committees = groupMeasurementsToCommittees(allMeasurements)
+        const { rows: created } = await pgClient.query(
+          'SELECT * FROM daily_network_retrieval_stats'
+        )
+        assert.deepStrictEqual(created, [])
+        await updateDailyNetworkRetrievalStats(
+          pgClient,
+          committees
+        )
+        const { rows } = await pgClient.query(
+          `SELECT
+               day::TEXT,
+               total,
+               successful
+            FROM daily_network_retrieval_stats`)
+
+        assert.deepStrictEqual(rows, [
+          { day: today, total: 5, successful: 2 }
+        ])
+      })
     })
   })
 
