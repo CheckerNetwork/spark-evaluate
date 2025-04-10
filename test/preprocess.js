@@ -418,7 +418,7 @@ describe('assertValidMeasurement', () => {
   })
 })
 
-describe('getNetworkRetrievalResult ', () => {
+describe('getNetworkRetrievalResult', () => {
   /** @type {Partial<import('../lib/typings.js').RawMeasurement>} */
   const SUCCESSFUL_RETRIEVAL = {
     spark_version: '1.5.2',
