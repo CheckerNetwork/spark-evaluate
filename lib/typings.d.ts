@@ -104,6 +104,7 @@ export interface RawMeasurement {
   network_retrieval_timeout: boolean;
   network_retrieval_car_too_large: boolean;
   network_retrieval_end_at: string;
+  network_retrieval_protocol: string;
 }
 
 export type CreatePgClient = () => Promise<import('pg').Client>;
