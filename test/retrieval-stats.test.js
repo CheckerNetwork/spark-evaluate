@@ -324,6 +324,58 @@ describe('retrieval statistics', () => {
     // Only one of the successful measurements used http
     assertPointFieldValue(point, 'success_rate_http', '0.25')
   })
+  it('records retrieval stats for majority and minority results', async () => {
+    /** @type {Measurement[]} */
+    const measurements = [
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xzero',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MAJORITY_RESULT'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xone',
+        retrievalResult: 'IPNI_ERROR_404',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MAJORITY_RESULT'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xtwo',
+        retrievalResult: 'TIMEOUT',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MAJORITY_RESULT'
+      },
+      // inet group 3 - score=1
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xthree',
+        retrievalResult: 'CONNECTION_REFUSED',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MAJORITY_RESULT'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xfour',
+        retrievalResult: 'HTTP_500',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MINORITY_RESULT'
+      }
+    ]
+
+    const point = new Point('stats')
+    buildRetrievalStats(measurements, point)
+    debug('stats', point.fields)
+    assertPointFieldValue(point, 'total_for_success_rates', '5i')
+    assertPointFieldValue(point, 'participants', '5i')
+    assertPointFieldValue(point, 'measurements', '5i')
+    assertPointFieldValue(point, 'result_rate_OK', '0.2')
+    assertPointFieldValue(point, 'result_rate_TIMEOUT', '0.2')
+    assertPointFieldValue(point, 'result_rate_IPNI_ERROR_404', '0.2')
+    assertPointFieldValue(point, 'result_rate_CONNECTION_REFUSED', '0.2')
+    assertPointFieldValue(point, 'result_rate_HTTP_500', '0.2')
+  })
 })
 
 describe('getValueAtPercentile', () => {
