@@ -347,7 +347,6 @@ describe('retrieval statistics', () => {
         taskingEvaluation: 'OK',
         consensusEvaluation: 'MAJORITY_RESULT'
       },
-      // inet group 3 - score=1
       {
         ...VALID_MEASUREMENT,
         participantAddress: '0xthree',
