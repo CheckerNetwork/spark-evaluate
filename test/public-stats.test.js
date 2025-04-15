@@ -4,7 +4,7 @@ import pg from 'pg'
 import { DATABASE_URL } from '../lib/config.js'
 import { migrateWithPgClient } from '../lib/migrate.js'
 import { buildEvaluatedCommitteesFromMeasurements, VALID_MEASUREMENT } from './helpers/test-data.js'
-import { updateDailyAllocatorRetrievalStats, updateDailyClientRetrievalStats, updateDailyNetworkRetrievalStats, updatePublicStats } from '../lib/public-stats.js'
+import { updateDailyAllocatorRetrievalStats, updateDailyClientRetrievalStats, updatePublicStats } from '../lib/public-stats.js'
 import { beforeEach } from 'mocha'
 import { groupMeasurementsToCommittees } from '../lib/committee.js'
 
@@ -1187,10 +1187,13 @@ describe('public-stats', () => {
           'SELECT * FROM daily_alternative_provider_retrieval_stats'
         )
         assert.deepStrictEqual(created, [])
-        await updateDailyNetworkRetrievalStats(
-          pgClient,
-          committees
-        )
+        await updatePublicStats({
+          createPgClient,
+          committees,
+          allMeasurements,
+          findDealClients: (_minerId, _cid) => ['f0client'],
+          findDealAllocators: (_minerId, _cid) => ['f0allocator']
+        })
         const { rows } = await pgClient.query(
           `SELECT
                day::TEXT,
