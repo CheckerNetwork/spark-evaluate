@@ -5,7 +5,7 @@ import {
   Measurement,
   parseMeasurements,
   assertValidMeasurement,
-  getNetworkRetrievalResult
+  getAlternativeProviderRetrievalResult
 } from '../lib/preprocess.js'
 import { Point } from '../lib/telemetry.js'
 import assert from 'node:assert'
@@ -418,7 +418,7 @@ describe('assertValidMeasurement', () => {
   })
 })
 
-describe('getNetworkRetrievalResult', () => {
+describe('getAlternativeProviderRetrievalResult', () => {
   /** @type {Partial<import('../lib/typings.js').RawMeasurement>} */
   const SUCCESSFUL_RETRIEVAL = {
     spark_version: '1.5.2',
@@ -441,63 +441,63 @@ describe('getNetworkRetrievalResult', () => {
   }
 
   it('successful retrieval', () => {
-    const result = getNetworkRetrievalResult({
+    const result = getAlternativeProviderRetrievalResult({
       ...SUCCESSFUL_RETRIEVAL
     })
     assert.strictEqual(result, 'OK')
   })
 
-  it('TIMEOUT - no network retrieval measurements', () => {
-    const result = getNetworkRetrievalResult({
+  it('TIMEOUT - no alternative provider retrieval measurements', () => {
+    const result = getAlternativeProviderRetrievalResult({
       ...SUCCESSFUL_RETRIEVAL,
       timeout: true
     })
     assert.strictEqual(result, 'TIMEOUT')
   })
 
-  it('TIMEOUT - successful network retrieval measurements', () => {
-    const result = getNetworkRetrievalResult({
+  it('TIMEOUT - successful alternative provider retrieval measurements', () => {
+    const result = getAlternativeProviderRetrievalResult({
       ...SUCCESSFUL_RETRIEVAL,
       timeout: true,
-      network_retrieval_car_too_large: false,
-      network_retrieval_timeout: false,
-      network_retrieval_status_code: 200,
-      network_retrieval_end_at: '2023-11-01T09:42:03.246Z',
-      network_retrieval_protocol: 'http'
+      alternative_provider_check_car_too_large: false,
+      alternative_provider_check_timeout: false,
+      alternative_provider_check_status_code: 200,
+      alternative_provider_check_end_at: '2023-11-01T09:42:03.246Z',
+      alternative_provider_check_protocol: 'http'
     })
     assert.strictEqual(result, 'TIMEOUT')
   })
 
-  it('NO_VALID_ADVERTISEMENT - no network retrieval measurements', () => {
-    const result = getNetworkRetrievalResult({
+  it('NO_VALID_ADVERTISEMENT - no alternative provider retrieval measurements', () => {
+    const result = getAlternativeProviderRetrievalResult({
       ...SUCCESSFUL_RETRIEVAL,
       indexer_result: 'NO_VALID_ADVERTISEMENT'
     })
     assert.strictEqual(result, 'IPNI_NO_VALID_ADVERTISEMENT')
   })
 
-  it('NO_VALID_ADVERTISEMENT - successful network retrieval measurements', () => {
-    const result = getNetworkRetrievalResult({
+  it('NO_VALID_ADVERTISEMENT - successful alternative provider retrieval measurements', () => {
+    const result = getAlternativeProviderRetrievalResult({
       ...SUCCESSFUL_RETRIEVAL,
       indexer_result: 'NO_VALID_ADVERTISEMENT',
-      network_retrieval_car_too_large: false,
-      network_retrieval_timeout: false,
-      network_retrieval_status_code: 200,
-      network_retrieval_end_at: '2023-11-01T09:42:03.246Z',
-      network_retrieval_protocol: 'http'
+      alternative_provider_check_car_too_large: false,
+      alternative_provider_check_timeout: false,
+      alternative_provider_check_status_code: 200,
+      alternative_provider_check_end_at: '2023-11-01T09:42:03.246Z',
+      alternative_provider_check_protocol: 'http'
     })
     assert.strictEqual(result, 'OK')
   })
 
-  it('NO_VALID_ADVERTISEMENT - TIMEOUT network retrieval measurements', () => {
-    const result = getNetworkRetrievalResult({
+  it('NO_VALID_ADVERTISEMENT - TIMEOUT alternative provider retrieval measurements', () => {
+    const result = getAlternativeProviderRetrievalResult({
       ...SUCCESSFUL_RETRIEVAL,
       indexer_result: 'NO_VALID_ADVERTISEMENT',
-      network_retrieval_car_too_large: false,
-      network_retrieval_timeout: true,
-      network_retrieval_status_code: 500,
-      network_retrieval_end_at: '2023-11-01T09:42:03.246Z',
-      network_retrieval_protocol: 'http'
+      alternative_provider_check_car_too_large: false,
+      alternative_provider_check_timeout: true,
+      alternative_provider_check_status_code: 500,
+      alternative_provider_check_end_at: '2023-11-01T09:42:03.246Z',
+      alternative_provider_check_protocol: 'http'
     })
     assert.strictEqual(result, 'TIMEOUT')
   })

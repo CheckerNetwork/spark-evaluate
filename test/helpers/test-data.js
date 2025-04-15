@@ -44,8 +44,8 @@ export const VALID_MEASUREMENT = {
   indexerResult: 'OK',
   taskingEvaluation: null,
   consensusEvaluation: null,
-  networkRetrievalResult: 'OK',
-  networkRetrieval: {
+  alternativeProviderRetrievalResult: 'OK',
+  alternativeProviderCheck: {
     statusCode: null,
     timeout: false,
     carTooLarge: false,

@@ -31,7 +31,7 @@ describe('public-stats', () => {
     await pgClient.query('DELETE FROM retrieval_timings')
     await pgClient.query('DELETE FROM daily_client_retrieval_stats')
     await pgClient.query('DELETE FROM daily_allocator_retrieval_stats')
-    await pgClient.query('DELETE FROM daily_network_retrieval_stats')
+    await pgClient.query('DELETE FROM daily_alternative_provider_retrieval_stats')
 
     // Run all tests inside a transaction to ensure `now()` always returns the same value
     // See https://dba.stackexchange.com/a/63549/125312
@@ -1174,17 +1174,17 @@ describe('public-stats', () => {
       it('creates or updates the row for today', async () => {
         /** @type {Measurement[]} */
         const allMeasurements = [
-          { ...VALID_MEASUREMENT, networkRetrievalResult: 'OK' },
-          { ...VALID_MEASUREMENT, networkRetrievalResult: 'OK' },
+          { ...VALID_MEASUREMENT, alternativeProviderRetrievalResult: 'OK' },
+          { ...VALID_MEASUREMENT, alternativeProviderRetrievalResult: 'OK' },
 
-          { ...VALID_MEASUREMENT, networkRetrievalResult: 'TIMEOUT' },
-          { ...VALID_MEASUREMENT, networkRetrievalResult: 'CAR_TOO_LARGE' },
-          { ...VALID_MEASUREMENT, networkRetrievalResult: 'IPNI_ERROR_FETCH' }
+          { ...VALID_MEASUREMENT, alternativeProviderRetrievalResult: 'TIMEOUT' },
+          { ...VALID_MEASUREMENT, alternativeProviderRetrievalResult: 'CAR_TOO_LARGE' },
+          { ...VALID_MEASUREMENT, alternativeProviderRetrievalResult: 'IPNI_ERROR_FETCH' }
         ]
 
         const committees = buildEvaluatedCommitteesFromMeasurements(allMeasurements)
         const { rows: created } = await pgClient.query(
-          'SELECT * FROM daily_network_retrieval_stats'
+          'SELECT * FROM daily_alternative_provider_retrieval_stats'
         )
         assert.deepStrictEqual(created, [])
         await updateDailyNetworkRetrievalStats(
@@ -1196,7 +1196,7 @@ describe('public-stats', () => {
                day::TEXT,
                total,
                successful
-            FROM daily_network_retrieval_stats`)
+            FROM daily_alternative_provider_retrieval_stats`)
 
         assert.deepStrictEqual(rows, [
           { day: today, total: 5, successful: 2 }

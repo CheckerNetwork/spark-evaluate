@@ -330,11 +330,11 @@ describe('retrieval statistics', () => {
     const measurements = [
       {
         ...VALID_MEASUREMENT,
-        networkRetrievalResult: 'OK'
+        alternativeProviderRetrievalResult: 'OK'
       },
       {
         ...VALID_MEASUREMENT,
-        networkRetrievalResult: 'HTTP_500'
+        alternativeProviderRetrievalResult: 'HTTP_500'
       }
     ]
 
