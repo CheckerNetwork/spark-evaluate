@@ -325,7 +325,7 @@ describe('retrieval statistics', () => {
     assertPointFieldValue(point, 'success_rate_http', '0.25')
   })
 
-  it('records network retrieval success rate', async () => {
+  it('records alternative provider retrieval success rate', async () => {
     /** @type {Measurement[]} */
     const measurements = [
       {
@@ -342,7 +342,7 @@ describe('retrieval statistics', () => {
     buildRetrievalStats(measurements, point)
     debug('stats', point.fields)
 
-    assertPointFieldValue(point, 'network_success_rate', '0.5')
+    assertPointFieldValue(point, 'alternative_provider_success_rate', '0.5')
   })
 })
 

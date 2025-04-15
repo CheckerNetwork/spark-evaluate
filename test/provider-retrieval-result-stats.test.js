@@ -63,8 +63,8 @@ describe('Provider Retrieval Result Stats', () => {
         }
       ])
       assert.deepStrictEqual(stats, new Map([
-        ['0', { total: 2, successful: 2, successfulHttp: 1, successfulHttpHead: 1 }],
-        ['1', { total: 2, successful: 0, successfulHttp: 0, successfulHttpHead: 0 }]
+        ['0', { total: 2, successful: 2, successfulHttp: 1, successfulHttpHead: 1, successfulAltProvider: 0 }],
+        ['1', { total: 2, successful: 0, successfulHttp: 0, successfulHttpHead: 0, successfulAltProvider: 0 }]
       ]))
     })
   })
@@ -178,8 +178,8 @@ describe('Provider Retrieval Result Stats', () => {
         contract_address: ieContractAddress,
         measurement_batches: round.measurementBatches,
         provider_retrieval_result_stats: {
-          0: { successful: 2, total: 2, successfulHttp: 1, successfulHttpHead: 1 },
-          1: { successful: 0, total: 2, successfulHttp: 0, successfulHttpHead: 0 }
+          0: { successful: 2, total: 2, successfulHttp: 1, successfulHttpHead: 1, successfulAltProvider: 0 },
+          1: { successful: 0, total: 2, successfulHttp: 0, successfulHttpHead: 0, successfulAltProvider: 0 }
         },
         round_details: 'baguqeerawg5jfpiy2g5xp5d422uwa3mpyzkmiguoeecesds7q65mn2hdoa4q',
         round_index: String(round.index),
