@@ -1170,7 +1170,7 @@ describe('public-stats', () => {
       ])
     })
 
-    describe('updateDailyNetworkRetrievalStats ', () => {
+    describe('daily_alternative_provider_retrieval_stats ', () => {
       it('creates or updates the row for today', async () => {
         /** @type {Measurement[]} */
         const allMeasurements = [
