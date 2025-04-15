@@ -4,7 +4,8 @@ import {
   preprocess,
   Measurement,
   parseMeasurements,
-  assertValidMeasurement
+  assertValidMeasurement,
+  getAlternativeProviderRetrievalResult
 } from '../lib/preprocess.js'
 import { Point } from '../lib/telemetry.js'
 import assert from 'node:assert'
@@ -414,5 +415,90 @@ describe('assertValidMeasurement', () => {
       end_at: 1672531202000
     }
     assert.throws(() => assertValidMeasurement(measurement), /first_byte_at must be greater than or equal to start_at/)
+  })
+})
+
+describe('getAlternativeProviderRetrievalResult', () => {
+  /** @type {Partial<import('../lib/typings.js').RawMeasurement>} */
+  const SUCCESSFUL_RETRIEVAL = {
+    spark_version: '1.5.2',
+    participant_address: 'f410fgkhpcrbmdvic52o3nivftrjxr7nzw47updmuzra',
+    station_id: VALID_STATION_ID,
+    finished_at: '2023-11-01T09:42:03.246Z',
+    timeout: false,
+    start_at: '2023-11-01T09:40:03.393Z',
+    status_code: 200,
+    first_byte_at: '1970-01-01T00:00:00.000Z',
+    end_at: '1970-01-01T00:00:00.000Z',
+    byte_length: 1234,
+    inet_group: 'ue49TX_JdYjI',
+    cid: 'bafkreihstuf2qcu3hs64ersidh46cjtilxcoipmzgu3pifwzmkqdjpraqq',
+    miner_id: 'f1abc',
+    provider_address: '/ip4/108.89.91.150/tcp/46717/p2p/12D3KooWSsaFCtzDJUEhLQYDdwoFtdCMqqfk562UMvccFz12kYxU',
+    provider_id: 'PROVIDERID',
+    protocol: 'http',
+    indexer_result: 'OK'
+  }
+
+  it('successful retrieval', () => {
+    const result = getAlternativeProviderRetrievalResult({
+      ...SUCCESSFUL_RETRIEVAL
+    })
+    assert.strictEqual(result, 'OK')
+  })
+
+  it('TIMEOUT - no alternative provider retrieval measurements', () => {
+    const result = getAlternativeProviderRetrievalResult({
+      ...SUCCESSFUL_RETRIEVAL,
+      timeout: true
+    })
+    assert.strictEqual(result, 'TIMEOUT')
+  })
+
+  it('TIMEOUT - successful alternative provider retrieval measurements', () => {
+    const result = getAlternativeProviderRetrievalResult({
+      ...SUCCESSFUL_RETRIEVAL,
+      timeout: true,
+      alternative_provider_check_car_too_large: false,
+      alternative_provider_check_timeout: false,
+      alternative_provider_check_status_code: 200,
+      alternative_provider_check_end_at: '2023-11-01T09:42:03.246Z',
+      alternative_provider_check_protocol: 'http'
+    })
+    assert.strictEqual(result, 'TIMEOUT')
+  })
+
+  it('NO_VALID_ADVERTISEMENT - no alternative provider retrieval measurements', () => {
+    const result = getAlternativeProviderRetrievalResult({
+      ...SUCCESSFUL_RETRIEVAL,
+      indexer_result: 'NO_VALID_ADVERTISEMENT'
+    })
+    assert.strictEqual(result, 'IPNI_NO_VALID_ADVERTISEMENT')
+  })
+
+  it('NO_VALID_ADVERTISEMENT - successful alternative provider retrieval measurements', () => {
+    const result = getAlternativeProviderRetrievalResult({
+      ...SUCCESSFUL_RETRIEVAL,
+      indexer_result: 'NO_VALID_ADVERTISEMENT',
+      alternative_provider_check_car_too_large: false,
+      alternative_provider_check_timeout: false,
+      alternative_provider_check_status_code: 200,
+      alternative_provider_check_end_at: '2023-11-01T09:42:03.246Z',
+      alternative_provider_check_protocol: 'http'
+    })
+    assert.strictEqual(result, 'OK')
+  })
+
+  it('NO_VALID_ADVERTISEMENT - TIMEOUT alternative provider retrieval measurements', () => {
+    const result = getAlternativeProviderRetrievalResult({
+      ...SUCCESSFUL_RETRIEVAL,
+      indexer_result: 'NO_VALID_ADVERTISEMENT',
+      alternative_provider_check_car_too_large: false,
+      alternative_provider_check_timeout: true,
+      alternative_provider_check_status_code: 500,
+      alternative_provider_check_end_at: '2023-11-01T09:42:03.246Z',
+      alternative_provider_check_protocol: 'http'
+    })
+    assert.strictEqual(result, 'TIMEOUT')
   })
 })

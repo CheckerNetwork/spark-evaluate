@@ -324,6 +324,26 @@ describe('retrieval statistics', () => {
     // Only one of the successful measurements used http
     assertPointFieldValue(point, 'success_rate_http', '0.25')
   })
+
+  it('records alternative provider retrieval success rate', async () => {
+    /** @type {Measurement[]} */
+    const measurements = [
+      {
+        ...VALID_MEASUREMENT,
+        alternativeProviderRetrievalResult: 'OK'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        alternativeProviderRetrievalResult: 'HTTP_500'
+      }
+    ]
+
+    const point = new Point('stats')
+    buildRetrievalStats(measurements, point)
+    debug('stats', point.fields)
+
+    assertPointFieldValue(point, 'alternative_provider_success_rate', '0.5')
+  })
 })
 
 describe('getValueAtPercentile', () => {
