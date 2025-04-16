@@ -375,6 +375,43 @@ describe('retrieval statistics', () => {
     assertPointFieldValue(point, 'result_rate_CONNECTION_REFUSED', '0.2')
     assertPointFieldValue(point, 'result_rate_HTTP_500', '0.2')
   })
+  it('records retrieval stats for different consensus evaluations', async () => {
+    /** @type {Measurement[]} */
+    const measurements = [
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xzero',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MAJORITY_RESULT'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xone',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MINORITY_RESULT'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xtwo',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'COMMITTEE_TOO_SMALL'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xfour',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MAJORITY_NOT_FOUND'
+      }
+    ]
+
+    const point = new Point('stats')
+    buildRetrievalStats(measurements, point)
+    debug('stats', point.fields)
+    assertPointFieldValue(point, 'total_for_success_rates', '4i')
+    assertPointFieldValue(point, 'participants', '4i')
+    assertPointFieldValue(point, 'measurements', '4i')
+    assertPointFieldValue(point, 'result_rate_OK', '1')
+  })
 })
 
 describe('getValueAtPercentile', () => {
