@@ -42,7 +42,7 @@
         "multiformats": "^13.3.2",
         "p-map": "^7.0.3",
         "p-retry": "^6.2.1",
-        "pg": "^8.14.1",
+        "pg": "^8.15.1",
         "postgrator": "^8.0.0"
     },
     "standard": {
