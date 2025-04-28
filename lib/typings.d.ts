@@ -105,6 +105,7 @@ export interface RawMeasurement {
   alternative_provider_check_car_too_large: boolean;
   alternative_provider_check_end_at: string;
   alternative_provider_check_protocol: string;
+  alternative_provider_check_provider_id: string;
 }
 
 export type CreatePgClient = () => Promise<import('pg').Client>;

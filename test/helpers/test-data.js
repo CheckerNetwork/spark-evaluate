@@ -50,7 +50,8 @@ export const VALID_MEASUREMENT = {
     timeout: false,
     carTooLarge: false,
     endAt: null,
-    protocol: 'http'
+    protocol: 'http',
+    providerId: 'ALTPROVIDERID'
   }
 }
 

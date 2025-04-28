@@ -463,7 +463,8 @@ describe('getAlternativeProviderRetrievalResult', () => {
       alternative_provider_check_timeout: false,
       alternative_provider_check_status_code: 200,
       alternative_provider_check_end_at: '2023-11-01T09:42:03.246Z',
-      alternative_provider_check_protocol: 'http'
+      alternative_provider_check_protocol: 'http',
+      alternative_provider_check_provider_id: 'ALTPROVIDERID'
     })
     assert.strictEqual(result, 'TIMEOUT')
   })
@@ -484,7 +485,8 @@ describe('getAlternativeProviderRetrievalResult', () => {
       alternative_provider_check_timeout: false,
       alternative_provider_check_status_code: 200,
       alternative_provider_check_end_at: '2023-11-01T09:42:03.246Z',
-      alternative_provider_check_protocol: 'http'
+      alternative_provider_check_protocol: 'http',
+      alternative_provider_check_provider_id: 'ALTPROVIDERID'
     })
     assert.strictEqual(result, 'OK')
   })
@@ -497,7 +499,8 @@ describe('getAlternativeProviderRetrievalResult', () => {
       alternative_provider_check_timeout: true,
       alternative_provider_check_status_code: 500,
       alternative_provider_check_end_at: '2023-11-01T09:42:03.246Z',
-      alternative_provider_check_protocol: 'http'
+      alternative_provider_check_protocol: 'http',
+      alternative_provider_check_provider_id: 'ALTPROVIDERID'
     })
     assert.strictEqual(result, 'TIMEOUT')
   })
