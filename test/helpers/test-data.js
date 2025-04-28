@@ -11,7 +11,8 @@ export const ROUND_DETAILS = 'bafybeie5rekb2jox77ow64wjjd2bjdsp6d3yeivhzzd234hnb
 export const VALID_TASK = {
   cid: 'QmUuEoBdjC8D1PfWZCc7JCSK8nj7TV6HbXWDHYHzZHCVGS',
   minerId: 'f1test',
-  clients: ['f1client']
+  clients: ['f1client'],
+  allocators: ['f1allocator']
 }
 Object.freeze(VALID_TASK)
 
@@ -27,6 +28,7 @@ export const VALID_MEASUREMENT = {
   stationId: VALID_STATION_ID,
   inet_group: VALID_INET_GROUP,
   status_code: 200,
+  head_status_code: 200,
   // TODO: these fields are not part of the Measurement object yet
   // timeout: false,
   // car_too_large: false,

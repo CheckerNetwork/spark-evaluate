@@ -106,6 +106,77 @@ describe('retrieval statistics', () => {
     assertPointFieldValue(point, 'rate_of_deals_advertising_http', '0.5')
   })
 
+  it('includes IPNI 5xx errors in breakdowns', async () => {
+    /** @type {Measurement[]} */
+    const measurements = [
+      {
+        ...VALID_MEASUREMENT
+      },
+      {
+        ...VALID_MEASUREMENT,
+        retrievalResult: 'IPNI_ERROR_504',
+        indexerResult: 'ERROR_504'
+      }
+    ]
+
+    const point = new Point('stats')
+    buildRetrievalStats(measurements, point)
+    debug('stats', point.fields)
+
+    assertPointFieldValue(point, 'measurements', '2i')
+
+    assertPointFieldValue(point, 'result_rate_OK', '0.5')
+    assertPointFieldValue(point, 'result_rate_IPNI_ERROR_504', '0.5')
+
+    assertPointFieldValue(point, 'indexer_rate_OK', '0.5')
+    assertPointFieldValue(point, 'indexer_rate_ERROR_504', '0.5')
+  })
+
+  it('excludes IPNI 5xx errors from success rates', async () => {
+    /** @type {Measurement[]} */
+    const measurements = [
+      {
+        ...VALID_MEASUREMENT,
+        protocol: 'http'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        protocol: 'http',
+        retrievalResult: 'IPNI_ERROR_504',
+        indexerResult: 'ERROR_504'
+      }
+    ]
+
+    const point = new Point('stats')
+    buildRetrievalStats(measurements, point)
+    debug('stats', point.fields)
+
+    assertPointFieldValue(point, 'measurements', '2i')
+    assertPointFieldValue(point, 'total_for_success_rates', '1i')
+    assertPointFieldValue(point, 'success_rate', '1')
+    assertPointFieldValue(point, 'success_rate_http', '1')
+  })
+
+  it('handles when all measurements reported IPNI 5xx', async () => {
+    /** @type {Measurement[]} */
+    const measurements = [
+      {
+        ...VALID_MEASUREMENT,
+        retrievalResult: 'IPNI_ERROR_504',
+        indexerResult: 'ERROR_504'
+      }
+    ]
+
+    const point = new Point('stats')
+    buildRetrievalStats(measurements, point)
+    debug('stats', point.fields)
+
+    assertPointFieldValue(point, 'measurements', '1i')
+    assertPointFieldValue(point, 'total_for_success_rates', '0i')
+    assertPointFieldValue(point, 'success_rate', '0')
+    assertPointFieldValue(point, 'success_rate_http', '0')
+  })
+
   it('handles first_byte_at set to unix epoch', () => {
     const measurements = [
       {
@@ -252,6 +323,94 @@ describe('retrieval statistics', () => {
     assertPointFieldValue(point, 'success_rate', '0.5')
     // Only one of the successful measurements used http
     assertPointFieldValue(point, 'success_rate_http', '0.25')
+  })
+  it('records retrieval stats for majority and minority results', async () => {
+    /** @type {Measurement[]} */
+    const measurements = [
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xzero',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MAJORITY_RESULT'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xone',
+        retrievalResult: 'IPNI_ERROR_404',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MAJORITY_RESULT'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xtwo',
+        retrievalResult: 'TIMEOUT',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MAJORITY_RESULT'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xthree',
+        retrievalResult: 'CONNECTION_REFUSED',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MAJORITY_RESULT'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xfour',
+        retrievalResult: 'HTTP_500',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MINORITY_RESULT'
+      }
+    ]
+
+    const point = new Point('stats')
+    buildRetrievalStats(measurements, point)
+    debug('stats', point.fields)
+    assertPointFieldValue(point, 'total_for_success_rates', '5i')
+    assertPointFieldValue(point, 'participants', '5i')
+    assertPointFieldValue(point, 'measurements', '5i')
+    assertPointFieldValue(point, 'result_rate_OK', '0.2')
+    assertPointFieldValue(point, 'result_rate_TIMEOUT', '0.2')
+    assertPointFieldValue(point, 'result_rate_IPNI_ERROR_404', '0.2')
+    assertPointFieldValue(point, 'result_rate_CONNECTION_REFUSED', '0.2')
+    assertPointFieldValue(point, 'result_rate_HTTP_500', '0.2')
+  })
+  it('records retrieval stats for different consensus evaluations', async () => {
+    /** @type {Measurement[]} */
+    const measurements = [
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xzero',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MAJORITY_RESULT'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xone',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MINORITY_RESULT'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xtwo',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'COMMITTEE_TOO_SMALL'
+      },
+      {
+        ...VALID_MEASUREMENT,
+        participantAddress: '0xfour',
+        taskingEvaluation: 'OK',
+        consensusEvaluation: 'MAJORITY_NOT_FOUND'
+      }
+    ]
+
+    const point = new Point('stats')
+    buildRetrievalStats(measurements, point)
+    debug('stats', point.fields)
+    assertPointFieldValue(point, 'total_for_success_rates', '4i')
+    assertPointFieldValue(point, 'participants', '4i')
+    assertPointFieldValue(point, 'measurements', '4i')
+    assertPointFieldValue(point, 'result_rate_OK', '1')
   })
 })
 

@@ -98,7 +98,8 @@ describe('evaluate', async function () {
       total: 1,
       successful: 1,
       // None of the measurements use http
-      successful_http: 0
+      successful_http: 0,
+      successful_http_head: 0
     }])
   })
   it('handles empty rounds', async () => {
