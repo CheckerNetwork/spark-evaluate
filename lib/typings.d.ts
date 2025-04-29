@@ -100,12 +100,15 @@ export interface RawMeasurement {
     | 'NO_VALID_ADVERTISEMENT'
     | 'ERROR_FETCH'
     | `ERROR_${number}`;
-  alternative_provider_check_status_code: number | undefined | null;
-  alternative_provider_check_timeout: boolean;
-  alternative_provider_check_car_too_large: boolean;
-  alternative_provider_check_end_at: string;
-  alternative_provider_check_protocol: string;
-  alternative_provider_check_provider_id: string;
+
+  alternative_provider_check: {
+    status_code: number | undefined | null;
+    timeout: boolean;
+    car_too_large: boolean;
+    end_at: string;
+    protocol: string;
+    provider_id: string;
+  };
 }
 
 export type CreatePgClient = () => Promise<import('pg').Client>;

@@ -459,12 +459,14 @@ describe('getAlternativeProviderRetrievalResult', () => {
     const result = getAlternativeProviderRetrievalResult({
       ...SUCCESSFUL_RETRIEVAL,
       timeout: true,
-      alternative_provider_check_car_too_large: false,
-      alternative_provider_check_timeout: false,
-      alternative_provider_check_status_code: 200,
-      alternative_provider_check_end_at: '2023-11-01T09:42:03.246Z',
-      alternative_provider_check_protocol: 'http',
-      alternative_provider_check_provider_id: 'ALTPROVIDERID'
+      alternative_provider_check: {
+        car_too_large: false,
+        timeout: false,
+        status_code: 200,
+        end_at: '2023-11-01T09:42:03.246Z',
+        protocol: 'http',
+        provider_id: 'ALTPROVIDERID'
+      }
     })
     assert.strictEqual(result, 'TIMEOUT')
   })
@@ -481,12 +483,14 @@ describe('getAlternativeProviderRetrievalResult', () => {
     const result = getAlternativeProviderRetrievalResult({
       ...SUCCESSFUL_RETRIEVAL,
       indexer_result: 'NO_VALID_ADVERTISEMENT',
-      alternative_provider_check_car_too_large: false,
-      alternative_provider_check_timeout: false,
-      alternative_provider_check_status_code: 200,
-      alternative_provider_check_end_at: '2023-11-01T09:42:03.246Z',
-      alternative_provider_check_protocol: 'http',
-      alternative_provider_check_provider_id: 'ALTPROVIDERID'
+      alternative_provider_check: {
+        car_too_large: false,
+        timeout: false,
+        status_code: 200,
+        end_at: '2023-11-01T09:42:03.246Z',
+        protocol: 'http',
+        provider_id: 'ALTPROVIDERID'
+      }
     })
     assert.strictEqual(result, 'OK')
   })
@@ -495,12 +499,14 @@ describe('getAlternativeProviderRetrievalResult', () => {
     const result = getAlternativeProviderRetrievalResult({
       ...SUCCESSFUL_RETRIEVAL,
       indexer_result: 'NO_VALID_ADVERTISEMENT',
-      alternative_provider_check_car_too_large: false,
-      alternative_provider_check_timeout: true,
-      alternative_provider_check_status_code: 500,
-      alternative_provider_check_end_at: '2023-11-01T09:42:03.246Z',
-      alternative_provider_check_protocol: 'http',
-      alternative_provider_check_provider_id: 'ALTPROVIDERID'
+      alternative_provider_check: {
+        car_too_large: false,
+        timeout: true,
+        status_code: 500,
+        end_at: '2023-11-01T09:42:03.246Z',
+        protocol: 'http',
+        provider_id: 'ALTPROVIDERID'
+      }
     })
     assert.strictEqual(result, 'TIMEOUT')
   })
