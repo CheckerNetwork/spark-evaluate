@@ -25,7 +25,7 @@
         "@filecoin-station/spark-impact-evaluator": "^1.2.4",
         "@glif/filecoin-address": "^4.0.0",
         "@influxdata/influxdb-client": "^1.35.0",
-        "@ipld/car": "^5.4.0",
+        "@ipld/car": "^5.4.1",
         "@ipld/dag-json": "^10.2.3",
         "@sentry/node": "^9.16.1",
         "@ucanto/core": "^10.3.1",
