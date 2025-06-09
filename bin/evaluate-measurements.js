@@ -93,7 +93,6 @@ async function processRound (roundIndex, measurements, resultCounts) {
     recordTelemetry,
     logger: { log: debug, error: debug },
     ieContract,
-    setScores: async () => {},
     prepareProviderRetrievalResultStats: async () => {}
   })
 
