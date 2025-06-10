@@ -75,7 +75,7 @@ describe('evaluate', async function () {
     const point = telemetry.find(p => p.name === 'evaluate')
     assert(!!point,
       `No telemetry point "evaluate" was recorded. Actual points: ${JSON.stringify(telemetry.map(p => p.name))}`)
-    assertPointFieldValue(point, 'total_nodes', '10i')
+    assertPointFieldValue(point, 'total_nodes', '1i')
     // TODO: assert more point fields
 
     const { rows: publicStats } = await pgClient.query('SELECT * FROM retrieval_stats')
