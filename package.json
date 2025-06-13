@@ -34,7 +34,7 @@
         "@web3-storage/w3up-client": "^16.5.2",
         "debug": "^4.4.1",
         "drand-client": "^1.4.2",
-        "ethers": "^6.14.3",
+        "ethers": "^6.14.4",
         "ipfs-unixfs-exporter": "^13.6.2",
         "just-percentile": "^4.2.0",
         "k-closest": "^1.3.0",
