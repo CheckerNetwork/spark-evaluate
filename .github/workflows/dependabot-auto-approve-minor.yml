@@ -32,6 +32,7 @@ jobs:
           - '@ucanto/'
           - '@web3-storage/car-block-validator'
           - multiformats
+          - '@ipld/dag-json'
     steps:
       - name: Dependabot metadata
         id: metadata
