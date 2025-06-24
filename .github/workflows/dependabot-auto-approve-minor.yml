@@ -33,6 +33,7 @@ jobs:
           - '@web3-storage/car-block-validator'
           - multiformats
           - '@ipld/dag-json'
+          - ipfs-unixfs-exporter
     steps:
       - name: Dependabot metadata
         id: metadata
