@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { MAX_SCORE, evaluate } from '../lib/evaluate.js'
-=======
 import { evaluate } from '../lib/evaluate.js'
->>>>>>> 354bf2c119dd0f3f05dc62721aba90b50d1bb698
 import { Point } from '../lib/telemetry.js'
 import assert from 'node:assert'
 import createDebug from 'debug'
