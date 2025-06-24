@@ -1,9 +1,13 @@
+<<<<<<< HEAD
 import { MAX_SCORE, evaluate } from '../lib/evaluate.js'
+=======
+import { evaluate } from '../lib/evaluate.js'
+>>>>>>> 354bf2c119dd0f3f05dc62721aba90b50d1bb698
 import { Point } from '../lib/telemetry.js'
 import assert from 'node:assert'
 import createDebug from 'debug'
 import { SPARK_ROUND_DETAILS, VALID_MEASUREMENT, VALID_TASK, today } from './helpers/test-data.js'
-import { assertPointFieldValue, assertRecordedTelemetryPoint } from './helpers/assertions.js'
+import { assertPointFieldValue } from './helpers/assertions.js'
 import { RoundData } from '../lib/round.js'
 import { DATABASE_URL } from '../lib/config.js'
 import pg from 'pg'
@@ -11,7 +15,6 @@ import { beforeEach } from 'mocha'
 import { migrateWithPgClient } from '../lib/migrate.js'
 
 /** @import {RoundDetails} from '../lib/typings.js' */
-/** @import {Measurement} from '../lib/preprocess.js' */
 
 const debug = createDebug('test')
 const logger = { log: debug, error: debug }
@@ -56,10 +59,6 @@ describe('evaluate', async function () {
     }
     /** @returns {Promise<RoundDetails>} */
     const fetchRoundDetails = async () => ({ ...SPARK_ROUND_DETAILS, retrievalTasks: [VALID_TASK] })
-    const setScoresCalls = []
-    const setScores = async (participantAddresses, scores) => {
-      setScoresCalls.push({ participantAddresses, scores })
-    }
     const ieContract = {
       async getAddress () {
         return '0x811765AccE724cD5582984cb35f5dE02d587CA12'
@@ -70,20 +69,12 @@ describe('evaluate', async function () {
       roundIndex: 0n,
       requiredCommitteeSize: 1,
       ieContract,
-      setScores,
       fetchRoundDetails,
       recordTelemetry,
       createPgClient,
       logger,
       prepareProviderRetrievalResultStats: async () => {}
     })
-    assert.strictEqual(setScoresCalls.length, 1)
-    assert.deepStrictEqual(setScoresCalls[0].participantAddresses, [VALID_MEASUREMENT.participantAddress])
-    assert.strictEqual(setScoresCalls[0].scores.length, 1)
-    assert.strictEqual(
-      setScoresCalls[0].scores[0],
-      1000000000000000n
-    )
 
     const point = telemetry.find(p => p.name === 'evaluate')
     assert(!!point,
@@ -95,8 +86,8 @@ describe('evaluate', async function () {
     assert.deepStrictEqual(publicStats, [{
       day: today(),
       miner_id: VALID_TASK.minerId,
-      total: 1,
-      successful: 1,
+      total: 10,
+      successful: 10,
       // None of the measurements use http
       successful_http: 0,
       successful_http_head: 0
@@ -104,10 +95,6 @@ describe('evaluate', async function () {
   })
   it('handles empty rounds', async () => {
     const round = new RoundData(0n)
-    const setScoresCalls = []
-    const setScores = async (participantAddresses, scores) => {
-      setScoresCalls.push({ participantAddresses, scores })
-    }
     const ieContract = {
       async getAddress () {
         return '0x811765AccE724cD5582984cb35f5dE02d587CA12'
@@ -120,28 +107,19 @@ describe('evaluate', async function () {
       roundIndex: 0n,
       requiredCommitteeSize: 1,
       ieContract,
-      setScores,
       fetchRoundDetails,
       recordTelemetry,
       createPgClient,
       logger,
       prepareProviderRetrievalResultStats: async () => {}
     })
-    assert.strictEqual(setScoresCalls.length, 1)
-    assert.deepStrictEqual(setScoresCalls[0].participantAddresses, [
-      '0x000000000000000000000000000000000000dEaD'
-    ])
-    assert.deepStrictEqual(setScoresCalls[0].scores, [
-      MAX_SCORE
-    ])
-
     let point = telemetry.find(p => p.name === 'evaluate')
     assert(!!point,
       `No telemetry point "evaluate" was recorded. Actual points: ${JSON.stringify(telemetry.map(p => p.name))}`)
 
     // TODO: assert point fields
 
-    point = telemetry.find(p => p.name === 'retrieval_stats_honest')
+    point = telemetry.find(p => p.name === 'retrieval_stats_all')
     assert(!!point,
           `No telemetry point "retrieval_stats_honest" was recorded. Actual points: ${JSON.stringify(telemetry.map(p => p.name))}`)
     assertPointFieldValue(point, 'measurements', '0i')
@@ -155,10 +133,6 @@ describe('evaluate', async function () {
   })
   it('handles unknown rounds', async () => {
     const round = new RoundData(0n)
-    const setScoresCalls = []
-    const setScores = async (participantAddresses, scores) => {
-      setScoresCalls.push({ participantAddresses, scores })
-    }
     const ieContract = {
       async getAddress () {
         return '0x811765AccE724cD5582984cb35f5dE02d587CA12'
@@ -170,7 +144,6 @@ describe('evaluate', async function () {
       round,
       roundIndex: 0n,
       ieContract,
-      setScores,
       requiredCommitteeSize: 1,
       fetchRoundDetails,
       recordTelemetry,
@@ -178,146 +151,9 @@ describe('evaluate', async function () {
       logger,
       prepareProviderRetrievalResultStats: async () => {}
     })
-    assert.strictEqual(setScoresCalls.length, 1)
-    assert.deepStrictEqual(setScoresCalls[0].participantAddresses, [
-      '0x000000000000000000000000000000000000dEaD'
-    ])
-    assert.deepStrictEqual(setScoresCalls[0].scores, [
-      MAX_SCORE
-    ])
-  })
-  it('calculates reward shares', async () => {
-    const round = new RoundData(0n)
-    for (let i = 0; i < 5; i++) {
-      round.measurements.push({ ...VALID_MEASUREMENT, participantAddress: '0x123' })
-      round.measurements.push({ ...VALID_MEASUREMENT, participantAddress: '0x234', inet_group: 'group2' })
-      round.measurements.push({
-        ...VALID_MEASUREMENT,
-        inet_group: 'group3',
-        // invalid task
-        cid: 'bafyreicnokmhmrnlp2wjhyk2haep4tqxiptwfrp2rrs7rzq7uk766chqvq',
-        provider_address: '/dns4/production-ipfs-peer.pinata.cloud/tcp/3000/ws/p2p/Qma8ddFEQWEU8ijWvdxXm3nxU7oHsRtCykAaVz8WUYhiKn',
-        protocol: 'bitswap'
-      })
-    }
-    const setScoresCalls = []
-    const setScores = async (participantAddresses, scores) => {
-      setScoresCalls.push({ participantAddresses, scores })
-    }
-    const ieContract = {
-      async getAddress () {
-        return '0x811765AccE724cD5582984cb35f5dE02d587CA12'
-      }
-    }
-    /** @returns {Promise<RoundDetails>} */
-    const fetchRoundDetails = async () => ({ ...SPARK_ROUND_DETAILS, retrievalTasks: [VALID_TASK] })
-    await evaluate({
-      round,
-      roundIndex: 0n,
-      requiredCommitteeSize: 1,
-      ieContract,
-      setScores,
-      recordTelemetry,
-      fetchRoundDetails,
-      createPgClient,
-      logger,
-      prepareProviderRetrievalResultStats: async () => {}
-    })
-    assert.strictEqual(setScoresCalls.length, 1)
-    assert.deepStrictEqual(setScoresCalls[0].participantAddresses.sort(), ['0x123', '0x234'])
-    const sum = (
-      setScoresCalls[0].scores[0] +
-      setScoresCalls[0].scores[1]
-    ).toString()
-    assert(
-      ['1000000000000000', '999999999999999'].includes(sum),
-      `Sum of scores not close enough. Got ${sum}`
-    )
-    assert.strictEqual(setScoresCalls[0].scores.length, 2)
-
-    const point = assertRecordedTelemetryPoint(telemetry, 'evaluate')
-    assert(!!point,
-      `No telemetry point "evaluate" was recorded. Actual points: ${JSON.stringify(telemetry.map(p => p.name))}`)
-
-    assertPointFieldValue(point, 'total_nodes', '3i')
   })
 
-  it('rewards majority measurements only', async () => {
-    const round = new RoundData(0n)
-    // Majority
-    round.measurements.push({ ...VALID_MEASUREMENT, participantAddress: '0x10' })
-    round.measurements.push({ ...VALID_MEASUREMENT, participantAddress: '0x20', inet_group: 'group2' })
-    // Minority
-    round.measurements.push({ ...VALID_MEASUREMENT, participantAddress: '0x30', inet_group: 'group3', retrievalResult: 'TIMEOUT' })
-
-    const setScoresCalls = []
-    const setScores = async (participantAddresses, scores) => {
-      setScoresCalls.push({ participantAddresses, scores })
-    }
-    const ieContract = {
-      async getAddress () {
-        return '0x811765AccE724cD5582984cb35f5dE02d587CA12'
-      }
-    }
-    /** @returns {Promise<RoundDetails>} */
-    const fetchRoundDetails = async () => ({ ...SPARK_ROUND_DETAILS, retrievalTasks: [VALID_TASK] })
-    await evaluate({
-      round,
-      roundIndex: 0n,
-      requiredCommitteeSize: 1,
-      ieContract,
-      setScores,
-      recordTelemetry,
-      fetchRoundDetails,
-      createPgClient,
-      logger,
-      prepareProviderRetrievalResultStats: async () => {}
-    })
-
-    assert.strictEqual(setScoresCalls.length, 1)
-    assert.deepStrictEqual(setScoresCalls[0].participantAddresses.sort(), ['0x10', '0x20'])
-    assert.deepStrictEqual(setScoresCalls[0].scores, [MAX_SCORE / 2n, MAX_SCORE / 2n])
-  })
-
-  it('adds a dummy entry to ensure scores add up exactly to MAX_SCORE', async () => {
-    const round = new RoundData(0n)
-    round.measurements.push({ ...VALID_MEASUREMENT, participantAddress: '0x123', inet_group: 'ig1' })
-    round.measurements.push({ ...VALID_MEASUREMENT, participantAddress: '0x234', inet_group: 'ig2' })
-    round.measurements.push({ ...VALID_MEASUREMENT, participantAddress: '0x456', inet_group: 'ig3' })
-
-    const setScoresCalls = []
-    const setScores = async (participantAddresses, scores) => {
-      setScoresCalls.push({ participantAddresses, scores })
-    }
-    const ieContract = {
-      async getAddress () {
-        return '0x811765AccE724cD5582984cb35f5dE02d587CA12'
-      }
-    }
-    const logger = { log: debug, error: debug }
-    /** @returns {Promise<RoundDetails>} */
-    const fetchRoundDetails = async () => ({ ...SPARK_ROUND_DETAILS, retrievalTasks: [VALID_TASK] })
-    await evaluate({
-      round,
-      roundIndex: 0n,
-      requiredCommitteeSize: 1,
-      ieContract,
-      setScores,
-      recordTelemetry,
-      fetchRoundDetails,
-      createPgClient,
-      logger,
-      prepareProviderRetrievalResultStats: async () => {}
-    })
-    assert.strictEqual(setScoresCalls.length, 1)
-    const { scores, participantAddresses } = setScoresCalls[0]
-    assert.strictEqual(scores.length, 4)
-    const sum = scores.reduce((prev, score) => (prev ?? 0) + score)
-    assert.strictEqual(sum, MAX_SCORE)
-    assert.strictEqual(participantAddresses.sort()[0], '0x000000000000000000000000000000000000dEaD')
-  })
-
-  it('reports retrieval stats - honest & all', async () => {
+  it('reports retrieval stats', async () => {
     const round = new RoundData(0n)
     for (let i = 0; i < 5; i++) {
       round.measurements.push({ ...VALID_MEASUREMENT })
@@ -331,10 +167,6 @@ describe('evaluate', async function () {
         retrievalResult: 'TIMEOUT'
       })
     }
-    const setScoresCalls = []
-    const setScores = async (participantAddresses, scores) => {
-      setScoresCalls.push({ participantAddresses, scores })
-    }
     const ieContract = {
       async getAddress () {
         return '0x811765AccE724cD5582984cb35f5dE02d587CA12'
@@ -347,7 +179,6 @@ describe('evaluate', async function () {
       roundIndex: 0n,
       requiredCommitteeSize: 1,
       ieContract,
-      setScores,
       recordTelemetry,
       fetchRoundDetails,
       createPgClient,
@@ -355,16 +186,7 @@ describe('evaluate', async function () {
       prepareProviderRetrievalResultStats: async () => {}
     })
 
-    let point = telemetry.find(p => p.name === 'retrieval_stats_honest')
-    assert(!!point,
-      `No telemetry point "retrieval_stats_honest" was recorded. Actual points: ${JSON.stringify(telemetry.map(p => p.name))}`)
-    assertPointFieldValue(point, 'measurements', '1i')
-    assertPointFieldValue(point, 'unique_tasks', '1i')
-    assertPointFieldValue(point, 'success_rate', '1')
-    // The default protocol is not http. While the overall success rate is 1, we expect the http success rate to be 0.
-    assertPointFieldValue(point, 'success_rate_http', '0')
-
-    point = telemetry.find(p => p.name === 'retrieval_stats_all')
+    const point = telemetry.find(p => p.name === 'retrieval_stats_all')
     assert(!!point,
       `No telemetry point "retrieval_stats_all" was recorded. Actual points: ${JSON.stringify(telemetry.map(p => p.name))}`)
     assertPointFieldValue(point, 'measurements', '10i')
@@ -378,7 +200,6 @@ describe('evaluate', async function () {
     for (let i = 0; i < 5; i++) {
       round.measurements.push({ ...VALID_MEASUREMENT })
     }
-    const setScores = async () => {}
     const prepareProviderRetrievalResultStatsCalls = []
     const prepareProviderRetrievalResultStats = async (round, committees) => {
       prepareProviderRetrievalResultStatsCalls.push({ round, committees })
@@ -396,7 +217,6 @@ describe('evaluate', async function () {
       roundIndex: 0n,
       requiredCommitteeSize: 1,
       ieContract,
-      setScores,
       recordTelemetry,
       fetchRoundDetails,
       createPgClient,
