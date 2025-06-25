@@ -115,7 +115,7 @@ describe('evaluate', async function () {
 
     // TODO: assert point fields
 
-    point = telemetry.find(p => p.name === 'retrieval_stats_all')
+    point = telemetry.find(p => p.name === 'retrieval_stats_honest')
     assert(!!point,
           `No telemetry point "retrieval_stats_honest" was recorded. Actual points: ${JSON.stringify(telemetry.map(p => p.name))}`)
     assertPointFieldValue(point, 'measurements', '0i')
@@ -149,7 +149,7 @@ describe('evaluate', async function () {
     })
   })
 
-  it('reports retrieval stats', async () => {
+  it('reports retrieval stats - honest & all', async () => {
     const round = new RoundData(0n)
     for (let i = 0; i < 5; i++) {
       round.measurements.push({ ...VALID_MEASUREMENT })
@@ -182,7 +182,15 @@ describe('evaluate', async function () {
       prepareProviderRetrievalResultStats: async () => {}
     })
 
-    const point = telemetry.find(p => p.name === 'retrieval_stats_all')
+    let point = telemetry.find(p => p.name === 'retrieval_stats_honest')
+    assert(!!point,
+      `No telemetry point "retrieval_stats_honest" was recorded. Actual points: ${JSON.stringify(telemetry.map(p => p.name))}`)
+    assertPointFieldValue(point, 'measurements', '10i')
+    assertPointFieldValue(point, 'unique_tasks', '2i')
+    assertPointFieldValue(point, 'success_rate', '0.5')
+    assertPointFieldValue(point, 'success_rate_http', '0')
+
+    point = telemetry.find(p => p.name === 'retrieval_stats_all')
     assert(!!point,
       `No telemetry point "retrieval_stats_all" was recorded. Actual points: ${JSON.stringify(telemetry.map(p => p.name))}`)
     assertPointFieldValue(point, 'measurements', '10i')
