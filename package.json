@@ -16,7 +16,7 @@
         "@types/mocha": "^10.0.10",
         "depcheck": "^1.4.7",
         "dotenv": "^16.5.0",
-        "mocha": "^11.7.0",
+        "mocha": "^11.7.1",
         "np": "^10.2.0",
         "standard": "^17.1.2",
         "typescript": "^5.8.3"
@@ -27,7 +27,7 @@
         "@influxdata/influxdb-client": "^1.35.0",
         "@ipld/car": "^5.4.1",
         "@ipld/dag-json": "^10.2.5",
-        "@sentry/node": "^9.31.0",
+        "@sentry/node": "^9.32.0",
         "@ucanto/core": "^10.4.0",
         "@ucanto/principal": "^9.0.2",
         "@web3-storage/car-block-validator": "^1.2.2",
