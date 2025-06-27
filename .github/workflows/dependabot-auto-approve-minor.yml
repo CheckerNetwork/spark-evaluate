@@ -34,6 +34,7 @@ jobs:
           - multiformats
           - '@ipld/dag-json'
           - ipfs-unixfs-exporter
+          - node
     steps:
       - name: Dependabot metadata
         id: metadata
