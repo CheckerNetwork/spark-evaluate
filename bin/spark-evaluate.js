@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/node'
 import { DATABASE_URL } from '../lib/config.js'
 import { startEvaluate } from '../index.js'
 import { fetchRoundDetails } from '../lib/spark-api.js'
@@ -15,20 +14,12 @@ import { createStorachaClient } from '../lib/storacha.js'
 import { createInflux } from '../lib/telemetry.js'
 
 const {
-  SENTRY_ENVIRONMENT = 'development',
   WALLET_SEED,
   STORACHA_SECRET_KEY,
   STORACHA_PROOF,
   GIT_COMMIT,
   INFLUXDB_TOKEN
 } = process.env
-
-Sentry.init({
-  dsn: 'https://d0651617f9690c7e9421ab9c949d67a4@o1408530.ingest.sentry.io/4505906069766144',
-  environment: SENTRY_ENVIRONMENT,
-  // Performance Monitoring
-  tracesSampleRate: 0.1 // Capture 10% of the transactions
-})
 
 assert(WALLET_SEED, 'WALLET_SEED required')
 assert(STORACHA_SECRET_KEY, 'STORACHA_SECRET_KEY required')

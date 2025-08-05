@@ -1,6 +1,5 @@
 import ms from 'ms'
 import assert from 'node:assert'
-import * as Sentry from '@sentry/node'
 import { preprocess } from './lib/preprocess.js'
 import { evaluate } from './lib/evaluate.js'
 import { RoundData } from './lib/round.js'
@@ -52,7 +51,6 @@ export const startEvaluate = async ({
         measurementsCid: cid
       }
       console.error(msg, details)
-      Sentry.captureException(new Error(msg), { extra: details })
       return
     }
 
@@ -73,12 +71,6 @@ export const startEvaluate = async ({
       })
     } catch (err) {
       console.error('CANNOT PREPROCESS MEASUREMENTS [ROUND=%s]:', roundIndex, err)
-      Sentry.captureException(err, {
-        extra: {
-          roundIndex,
-          measurementsCid: cid
-        }
-      })
     }
   }
 
@@ -120,11 +112,6 @@ export const startEvaluate = async ({
       prepareProviderRetrievalResultStats
     }).catch(err => {
       console.error('CANNOT EVALUATE ROUND %s:', evaluatedRoundIndex, err)
-      Sentry.captureException(err, {
-        extra: {
-          roundIndex: evaluatedRoundIndex
-        }
-      })
     })
   }
 
@@ -132,14 +119,12 @@ export const startEvaluate = async ({
   ieContract.on('MeasurementsAdded', (...args) => {
     onMeasurementsAdded(...args).catch(err => {
       console.error('CANNOT ADD MEASUREMENTS:', err)
-      Sentry.captureException(err)
     })
   })
 
   ieContract.on('RoundStart', (...args) => {
     onRoundStart(...args).catch(err => {
       console.error('CANNOT HANDLE START OF ROUND %s:', args[0], err)
-      Sentry.captureException(err)
     })
   })
 
