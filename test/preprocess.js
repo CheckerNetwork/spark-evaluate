@@ -4,7 +4,8 @@ import {
   preprocess,
   Measurement,
   parseMeasurements,
-  assertValidMeasurement
+  assertValidMeasurement,
+  fetchMeasurements
 } from '../lib/preprocess.js'
 import { Point } from '../lib/telemetry.js'
 import assert from 'node:assert'
@@ -83,6 +84,20 @@ describe('preprocess', () => {
   it('accepts ETH 0x address', () => {
     const converted = parseParticipantAddress('0x3356fd7D01F001f5FdA3dc032e8bA14E54C2a1a1')
     assert.strictEqual(converted, '0x3356fd7D01F001f5FdA3dc032e8bA14E54C2a1a1')
+  })
+})
+
+describe('fetchMeasurements', () => {
+  it('handles empty batch with CID bafkqaaa', async () => {
+    const cid = 'bafkqaaa'
+    const measurements = await fetchMeasurements(cid)
+    assert.deepStrictEqual(measurements, [])
+  })
+
+  it('handles empty batch with CID bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku', async () => {
+    const cid = 'bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku'
+    const measurements = await fetchMeasurements(cid)
+    assert.deepStrictEqual(measurements, [])
   })
 })
 
