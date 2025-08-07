@@ -1,7 +1,6 @@
 // dotenv must be imported before importing anything else
 import 'dotenv/config'
 
-import * as Sentry from '@sentry/node'
 import { DATABASE_URL } from '../lib/config.js'
 import { evaluate } from '../lib/evaluate.js'
 import { preprocess, fetchMeasurements } from '../lib/preprocess.js'
@@ -20,13 +19,6 @@ import * as SparkImpactEvaluator from '@filecoin-station/spark-impact-evaluator'
 const {
   DUMP
 } = process.env
-
-Sentry.init({
-  dsn: 'https://d0651617f9690c7e9421ab9c949d67a4@o1408530.ingest.sentry.io/4505906069766144',
-  environment: process.env.SENTRY_ENVIRONMENT || 'dry-run',
-  // Performance Monitoring
-  tracesSampleRate: 0.1 // Capture 10% of the transactions
-})
 
 const cacheDir = fileURLToPath(new URL('../.cache', import.meta.url))
 await mkdir(cacheDir, { recursive: true })
@@ -98,12 +90,6 @@ for (const cid of measurementCids) {
     })
   } catch (err) {
     console.error(err)
-    Sentry.captureException(err, {
-      extra: {
-        roundIndex,
-        measurementsCid: cid
-      }
-    })
   }
 }
 

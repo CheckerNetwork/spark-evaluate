@@ -2,7 +2,6 @@
 import 'dotenv/config'
 
 import { Point } from '@influxdata/influxdb-client'
-import * as Sentry from '@sentry/node'
 import createDebug from 'debug'
 import fs from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
@@ -15,13 +14,6 @@ import { RoundData } from '../lib/round.js'
 import * as SparkImpactEvaluator from '@filecoin-station/spark-impact-evaluator'
 
 const { STORE_ALL_MINERS } = process.env
-
-Sentry.init({
-  dsn: 'https://d0651617f9690c7e9421ab9c949d67a4@o1408530.ingest.sentry.io/4505906069766144',
-  environment: process.env.SENTRY_ENVIRONMENT || 'dry-run',
-  // Performance Monitoring
-  tracesSampleRate: 0.1 // Capture 10% of the transactions
-})
 
 const debug = createDebug('spark:bin')
 
