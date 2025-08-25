@@ -31,6 +31,7 @@ describe('public-stats', () => {
     await pgClient.query('DELETE FROM retrieval_timings')
     await pgClient.query('DELETE FROM daily_client_retrieval_stats')
     await pgClient.query('DELETE FROM daily_allocator_retrieval_stats')
+    await pgClient.query('DELETE FROM daily_miner_deals_checked')
 
     // Run all tests inside a transaction to ensure `now()` always returns the same value
     // See https://dba.stackexchange.com/a/63549/125312
@@ -1167,6 +1168,133 @@ describe('public-stats', () => {
         // 5 measurements were recorded in total, but only 4 are counted
         { day: today, allocator_id: 'f0allocator', total: 4, successful: 3 }
       ])
+    })
+  })
+
+  describe('updateDailyMinerDealsChecked', () => {
+    it('collects payload CIDs per miner', async () => {
+      /** @type {Measurement[]} */
+      const honestMeasurements = [
+        { ...VALID_MEASUREMENT, minerId: 'f1first', cid: 'cidone' },
+        { ...VALID_MEASUREMENT, minerId: 'f1first', cid: 'cidtwo' },
+        { ...VALID_MEASUREMENT, minerId: 'f1second', cid: 'cidone' },
+        { ...VALID_MEASUREMENT, minerId: 'f1second', cid: 'cidthree' }
+      ]
+      const allMeasurements = honestMeasurements
+      const committees = buildEvaluatedCommitteesFromMeasurements(honestMeasurements)
+
+      await updatePublicStats({
+        createPgClient,
+        committees,
+        allMeasurements,
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
+      })
+
+      const { rows: created } = await pgClient.query(
+        'SELECT day::TEXT, miner_id, payload_cids FROM daily_miner_deals_checked ORDER BY miner_id'
+      )
+      assert.deepStrictEqual(created, [
+        { day: today, miner_id: 'f1first', payload_cids: ['cidone', 'cidtwo'] },
+        { day: today, miner_id: 'f1second', payload_cids: ['cidone', 'cidthree'] }
+      ])
+    })
+
+    it('handles duplicate CIDs correctly', async () => {
+      /** @type {Measurement[]} */
+      const honestMeasurements = [
+        { ...VALID_MEASUREMENT, minerId: 'f1miner', cid: 'cidone' },
+        { ...VALID_MEASUREMENT, minerId: 'f1miner', cid: 'cidone' }, // duplicate
+        { ...VALID_MEASUREMENT, minerId: 'f1miner', cid: 'cidtwo' }
+      ]
+      const allMeasurements = honestMeasurements
+      const committees = buildEvaluatedCommitteesFromMeasurements(honestMeasurements)
+
+      await updatePublicStats({
+        createPgClient,
+        committees,
+        allMeasurements,
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
+      })
+
+      const { rows: created } = await pgClient.query(
+        'SELECT day::TEXT, miner_id, payload_cids FROM daily_miner_deals_checked'
+      )
+      assert.deepStrictEqual(created, [
+        { day: today, miner_id: 'f1miner', payload_cids: ['cidone', 'cidtwo'] }
+      ])
+    })
+
+    it('updates existing records by merging CID arrays', async () => {
+      // First, create an initial record
+      {
+        /** @type {Measurement[]} */
+        const honestMeasurements = [
+          { ...VALID_MEASUREMENT, minerId: 'f1miner', cid: 'cidone' }
+        ]
+        const allMeasurements = honestMeasurements
+        const committees = buildEvaluatedCommitteesFromMeasurements(honestMeasurements)
+
+        await updatePublicStats({
+          createPgClient,
+          committees,
+          allMeasurements,
+          findDealClients: (_minerId, _cid) => ['f0client'],
+          findDealAllocators: (_minerId, _cid) => ['f0allocator']
+        })
+
+        const { rows: created } = await pgClient.query(
+          'SELECT day::TEXT, miner_id, payload_cids FROM daily_miner_deals_checked'
+        )
+        assert.deepStrictEqual(created, [
+          { day: today, miner_id: 'f1miner', payload_cids: ['cidone'] }
+        ])
+      }
+
+      // Now update with additional CIDs
+      {
+        /** @type {Measurement[]} */
+        const honestMeasurements = [
+          { ...VALID_MEASUREMENT, minerId: 'f1miner', cid: 'cidone' }, // duplicate - should be ignored
+          { ...VALID_MEASUREMENT, minerId: 'f1miner', cid: 'cidtwo' } // new CID
+        ]
+        const allMeasurements = honestMeasurements
+        const committees = buildEvaluatedCommitteesFromMeasurements(honestMeasurements)
+
+        await updatePublicStats({
+          createPgClient,
+          committees,
+          allMeasurements,
+          findDealClients: (_minerId, _cid) => ['f0client'],
+          findDealAllocators: (_minerId, _cid) => ['f0allocator']
+        })
+
+        const { rows: updated } = await pgClient.query(
+          'SELECT day::TEXT, miner_id, payload_cids FROM daily_miner_deals_checked'
+        )
+        assert.deepStrictEqual(updated, [
+          { day: today, miner_id: 'f1miner', payload_cids: ['cidone', 'cidtwo'] }
+        ])
+      }
+    })
+
+    it('handles empty committees gracefully', async () => {
+      const committees = []
+      const allMeasurements = []
+
+      await updatePublicStats({
+        createPgClient,
+        committees,
+        allMeasurements,
+        findDealClients: (_minerId, _cid) => ['f0client'],
+        findDealAllocators: (_minerId, _cid) => ['f0allocator']
+      })
+
+      const { rows: created } = await pgClient.query(
+        'SELECT * FROM daily_miner_deals_checked'
+      )
+      assert.deepStrictEqual(created, [])
     })
   })
 
