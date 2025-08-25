@@ -104,8 +104,8 @@ async function getMessagesInMempool (f4addr) {
   const res = await pRetry(
     () => fetch(`https://filfox.info/api/v1/message/mempool/filtered-list?address=${f4addr}&pageSize=1000`),
     {
-      async onFailedAttempt (error) {
-        console.warn(error)
+      async onFailedAttempt (ctx) {
+        console.warn(ctx)
         console.warn('Filfox request failed. Retrying...')
       }
     }
