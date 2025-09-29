@@ -1,0 +1,15 @@
+# https://github.com/dependabot/dependabot-core/issues/3253#issuecomment-852541544
+# This workflow doesn't have access to secrets and has a read-only token
+# It will trigger `deploy`, which has permissions
+name: Dependabot Deploy Check
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  check-dependabot:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    steps:
+      - run: echo "Commit created by Dependabot"
