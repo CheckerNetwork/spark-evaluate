@@ -15,7 +15,7 @@
     "devDependencies": {
         "@types/mocha": "^10.0.10",
         "depcheck": "^1.4.7",
-        "dotenv": "^17.2.2",
+        "dotenv": "^17.2.3",
         "mocha": "^11.7.2",
         "np": "^10.2.0",
         "standard": "^17.1.2",
