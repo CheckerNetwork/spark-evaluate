@@ -19,7 +19,7 @@
         "mocha": "^11.7.2",
         "np": "^10.2.0",
         "standard": "^17.1.2",
-        "typescript": "^5.9.2"
+        "typescript": "^5.9.3"
     },
     "dependencies": {
         "@filecoin-station/spark-impact-evaluator": "^1.2.4",
