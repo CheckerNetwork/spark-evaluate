@@ -18,7 +18,6 @@ export const startEvaluate = async ({
   recordTelemetry,
   createPgClient,
   logger,
-  setScores,
   prepareProviderRetrievalResultStats
 }) => {
   assert(typeof createPgClient === 'function', 'createPgClient must be a function')

@@ -8,7 +8,6 @@ import { fetchMeasurements } from '../lib/preprocess.js'
 import { migrateWithPgConfig } from '../lib/migrate.js'
 import pg from 'pg'
 import { createContracts } from '../lib/contracts.js'
-import { setScores } from '../lib/submit-scores.js'
 import * as providerRetrievalResultStats from '../lib/provider-retrieval-result-stats.js'
 import { createStorachaClient } from '../lib/storacha.js'
 import { createInflux } from '../lib/telemetry.js'
@@ -55,7 +54,6 @@ await Promise.all([
     recordTelemetry,
     createPgClient,
     logger: console,
-    setScores: (participants, values) => setScores(signer, participants, values),
     prepareProviderRetrievalResultStats: (round, committees) => providerRetrievalResultStats.prepare({
       storachaClient,
       createPgClient,
